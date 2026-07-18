@@ -1,0 +1,46 @@
+services:
+  focus:
+    build: .
+    restart: unless-stopped
+    env_file: .env.remote
+    environment:
+      FOCUS_HOST: 0.0.0.0
+      FOCUS_DATA_DIR: /app/data
+    expose:
+      - "8765"
+    volumes:
+      - focus-data:/app/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8765/api/health', timeout=3))['ok']"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      focus:
+        condition: service_healthy
+    environment:
+      FOCUS_DOMAIN: ${FOCUS_DOMAIN:?Set FOCUS_DOMAIN in .env.remote}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  focus-data:
+  caddy-data:
+  caddy-config:

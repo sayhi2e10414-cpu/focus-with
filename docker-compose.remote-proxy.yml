@@ -1,0 +1,19 @@
+services:
+  focus:
+    build: .
+    restart: unless-stopped
+    env_file: .env.remote
+    environment:
+      FOCUS_HOST: 0.0.0.0
+      FOCUS_DATA_DIR: /app/data
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - focus-data:/app/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  focus-data:

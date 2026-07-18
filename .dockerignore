@@ -1,0 +1,11 @@
+.env
+.git
+.github
+.venv
+__pycache__
+*.pyc
+data
+generated
+logs
+macos
+tests

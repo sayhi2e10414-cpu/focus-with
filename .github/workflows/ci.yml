@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+      - run: python -m compileall -q app tests
+      - run: bash -n scripts/*.sh scripts/focus scripts/focus-mcp
+      - name: Verify remote configuration generation
+        env:
+          FOCUSWITH_ADMIN_PASSWORD: ci-only-password-value
+        run: |
+          python scripts/setup_remote_env.py --domain focus.example.com
+          python - <<'PY'
+          from pathlib import Path
+          text = Path(".env.remote").read_text()
+          assert "FOCUS_PUBLIC_URL=https://focus.example.com" in text
+          assert "ci-only-password-value" not in text
+          assert "FOCUS_OAUTH_PASSWORD_HASH=" in text
+          PY
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./macos/FocusFloat/build.sh
+      - run: codesign --verify --deep --strict generated/FocusFloat.app

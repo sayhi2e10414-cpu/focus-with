@@ -1,0 +1,27 @@
+[project]
+name = "focus-with"
+version = "0.2.0"
+description = "A self-hosted focus system designed for humans and AI assistants."
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.135.3",
+  "uvicorn==0.44.0",
+  "sqlalchemy==2.0.49",
+  "python-dotenv==1.2.2",
+  "pydantic==2.12.5",
+  "httpx==0.28.1",
+  "mcp==1.28.1",
+  "python-multipart==0.0.32",
+]
+
+[project.scripts]
+focus-server = "app.main:run"
+focus-mcp = "app.mcp_server:run"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<10"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

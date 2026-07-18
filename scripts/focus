@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON="$ROOT/.venv/bin/python"
+PID_FILE="$ROOT/data/focus.pid"
+LOG_FILE="$ROOT/data/focus.log"
+
+cd "$ROOT"
+
+require_install() {
+  if [[ ! -x "$PYTHON" ]]; then
+    echo "FocusWith is not installed. Run ./scripts/install.sh first." >&2
+    exit 1
+  fi
+}
+
+read_pid() {
+  [[ -f "$PID_FILE" ]] && tr -dc '0-9' < "$PID_FILE" || true
+}
+
+is_running() {
+  local pid
+  pid="$(read_pid)"
+  [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
+}
+
+case "${1:-help}" in
+  start)
+    require_install
+    mkdir -p data
+    if is_running; then
+      echo "FocusWith is already running (PID $(read_pid))."
+      exit 0
+    fi
+    nohup "$PYTHON" -m app.main >> "$LOG_FILE" 2>&1 < /dev/null &
+    pid=$!
+    printf '%s' "$pid" > "$PID_FILE"
+    sleep 1
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "FocusWith failed to start. Check $LOG_FILE" >&2
+      exit 1
+    fi
+    port="$("$PYTHON" -c 'from app.config import settings; print(settings.port)')"
+    echo "FocusWith started at http://127.0.0.1:$port"
+    ;;
+  stop)
+    if ! is_running; then
+      echo "FocusWith is not running."
+      exit 0
+    fi
+    pid="$(read_pid)"
+    kill "$pid"
+    for _ in 1 2 3 4 5; do
+      kill -0 "$pid" 2>/dev/null || break
+      sleep 1
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "FocusWith did not stop cleanly (PID $pid)." >&2
+      exit 1
+    fi
+    : > "$PID_FILE"
+    echo "FocusWith stopped."
+    ;;
+  restart)
+    "$0" stop
+    "$0" start
+    ;;
+  status)
+    if is_running; then echo "FocusWith is running (PID $(read_pid))."; else echo "FocusWith is stopped."; fi
+    ;;
+  doctor)
+    require_install
+    "$PYTHON" -c 'from app.config import settings; from app.database import engine; import app.models; from sqlalchemy import text; settings.validate_remote_mcp(); assert settings.local_only or settings.api_token, "A public bind requires FOCUS_API_TOKEN"; connection=engine.connect(); connection.execute(text("SELECT 1")); connection.close(); print("✓ Python, configuration, and database")'
+    port="$("$PYTHON" -c 'from app.config import settings; print(settings.port)')"
+    if "$PYTHON" -c "import json,urllib.request; data=json.load(urllib.request.urlopen('http://127.0.0.1:$port/api/health', timeout=3)); assert data['ok']" >/dev/null 2>&1; then
+      echo "✓ HTTP server"
+    else
+      echo "○ HTTP server is not running yet"
+    fi
+    "$PYTHON" -c 'from app.config import settings; print("✓ API and phone tokens configured" if settings.api_token and settings.phone_token else "○ Local mode without generated tokens")'
+    "$PYTHON" -c 'from app.config import settings; print("✓ OAuth-protected Remote MCP configured" if settings.remote_mcp_enabled else "○ Remote MCP disabled (local/private mode)")'
+    ;;
+  logs)
+    touch "$LOG_FILE"
+    tail -n 80 "$LOG_FILE"
+    ;;
+  *)
+    echo "Usage: ./scripts/focus {start|stop|restart|status|doctor|logs}"
+    ;;
+esac
