@@ -94,6 +94,7 @@ To use an existing AI client, connect the private local server in [docs/MCP.md](
 - macOS floating timer: `./macos/FocusFloat/install.sh`
 - iPhone Shortcuts: [docs/IPHONE_SHORTCUTS.md](docs/IPHONE_SHORTCUTS.md)
 - Android companion: [docs/ANDROID.md](docs/ANDROID.md)
+- Signed Android downloads: [GitHub Releases](https://github.com/sayhi2e10414-cpu/focus-with/releases)
 - Telegram: set `FOCUS_TELEGRAM_BOT_TOKEN` and `FOCUS_TELEGRAM_CHAT_ID` in `.env`, then restart.
 
 Telegram is a delivery adapter, not the owner of the Focus session. Timer completion and distraction events are created by FocusWith, then delivered to the browser and any enabled channel.

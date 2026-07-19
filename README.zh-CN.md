@@ -94,6 +94,7 @@ FOCUS_AI_BASE_URL=https://provider.example/v1
 - macOS 悬浮计时器：`./macos/FocusFloat/install.sh`
 - iPhone 快捷指令：[docs/IPHONE_SHORTCUTS.md](docs/IPHONE_SHORTCUTS.md)
 - Android 手机伴侣：[docs/ANDROID.md](docs/ANDROID.md)
+- Android 正式签名版下载：[GitHub Releases](https://github.com/sayhi2e10414-cpu/focus-with/releases)
 - Telegram：在 `.env` 设置 `FOCUS_TELEGRAM_BOT_TOKEN` 和 `FOCUS_TELEGRAM_CHAT_ID` 后重启。
 
 Telegram 只负责投递消息，不持有专注状态。计时结束与分心事件由 FocusWith 生成，再交给浏览器或启用的消息通道。

@@ -21,9 +21,19 @@ It cannot read screen pixels, messages, typed text, or content inside another ap
 
 The app intentionally does not request Accessibility, screen capture, contacts, messages, location, microphone, or the full Focus API token.
 
+## Verify an official APK
+
+Official GitHub release APKs are signed with this certificate SHA-256 fingerprint:
+
+```text
+14:75:E1:99:34:1B:16:F5:43:DF:7F:41:91:AB:A4:81:39:99:6B:50:70:4F:67:D5:BC:0C:72:DB:A9:3C:18:FB
+```
+
+The release also includes a `.sha256` file for verifying the downloaded APK bytes. Do not install an APK presented as an official FocusWith build if its signing certificate differs.
+
 ## Configure
 
-1. Install the APK and open **FocusWith Companion**.
+1. Download the signed APK from [GitHub Releases](https://github.com/sayhi2e10414-cpu/focus-with/releases), install it, and open **FocusWith Companion**.
 2. Enter the HTTPS origin of the FocusWith server, for example `https://focus.example.com`.
 3. Enter `FOCUS_PHONE_TOKEN`, not `FOCUS_API_TOKEN`.
 4. Edit monitored applications using one line per app:
@@ -56,4 +66,4 @@ From the `android/` directory:
 gradle :app:assembleDebug
 ```
 
-The debug APK is created under `android/app/build/outputs/apk/debug/`. A public release APK should be signed through a protected CI secret or an owner's local keystore; signing keys must never be committed.
+The debug APK is created under `android/app/build/outputs/apk/debug/`. Version tags build a signed release APK through protected GitHub Actions secrets, verify its signature, and publish it with a SHA-256 checksum. The signing key must never be committed and must be backed up securely because future updates require the same key.

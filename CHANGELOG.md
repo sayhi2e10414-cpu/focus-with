@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-07-19
+
+- Added a protected Android release-signing workflow with signature verification and SHA-256 checksums.
+- Added automatic GitHub pre-releases with a directly downloadable, signed Android APK.
+- Pinned Android CI actions to reviewed immutable commits and current stable releases.
+
 ## 0.4.2 — 2026-07-19
 
 - Documented and narrowly suppressed Android Lint's protected-permission warning for the owner-granted usage-access permission required by the companion.

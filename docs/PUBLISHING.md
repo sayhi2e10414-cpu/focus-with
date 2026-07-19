@@ -10,10 +10,12 @@
 
 ## Release
 
-- Tag: `v0.4.2`
-- Title: `FocusWith v0.4.2 — Android companion & more AI providers`
+- Tag: `v0.5.0`
+- Title: `FocusWith v0.5.0 — Public Android companion & more AI providers`
 - Body: use [`RELEASE_NOTES.md`](../RELEASE_NOTES.md)
 - Mark as a pre-release while the project remains on the `0.x` line.
+
+Pushing the annotated version tag builds, verifies, and attaches a signed Android APK plus its SHA-256 checksum. Keep the signing keystore backed up outside Git and store CI copies only in encrypted GitHub Actions secrets.
 
 ## 中文发布动态
 
