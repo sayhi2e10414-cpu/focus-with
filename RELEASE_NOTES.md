@@ -1,4 +1,4 @@
-# FocusWith v0.5.0 — Public Android companion & more AI providers
+# FocusWith v0.5.1 — Public Android companion & more AI providers
 
 FocusWith can now stay with you on Android and connect to more AI providers without giving a phone or model unrestricted access to your server.
 
@@ -15,7 +15,7 @@ FocusWith 现在也可以在 Android 上陪你专注，并支持更多 AI 服务
 
 ## Android preview notes
 
-- v0.5.0 is the first publicly downloadable, signed Android build. GitHub Releases also includes its SHA-256 checksum.
+- v0.5.1 is the first publicly downloadable, signed Android build. GitHub Releases also includes its SHA-256 checksum.
 - Android usage access, notifications, and the optional overlay permission must be granted explicitly by the device owner.
 - Some Android vendors may require removing battery restrictions for reliable background monitoring.
 - Android may ask users to allow their browser or file manager to install apps from GitHub because the APK is distributed outside Google Play.

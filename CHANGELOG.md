@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.5.1 — 2026-07-19
+
+- Fixed the public Android release workflow to invoke `apksigner` from the installed Android build-tools directory.
+
 ## 0.5.0 — 2026-07-19
 
 - Added a protected Android release-signing workflow with signature verification and SHA-256 checksums.

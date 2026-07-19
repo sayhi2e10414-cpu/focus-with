@@ -10,8 +10,8 @@
 
 ## Release
 
-- Tag: `v0.5.0`
-- Title: `FocusWith v0.5.0 — Public Android companion & more AI providers`
+- Tag: `v0.5.1`
+- Title: `FocusWith v0.5.1 — Public Android companion & more AI providers`
 - Body: use [`RELEASE_NOTES.md`](../RELEASE_NOTES.md)
 - Mark as a pre-release while the project remains on the `0.x` line.
 
