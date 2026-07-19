@@ -1,4 +1,4 @@
-# FocusWith v0.4.1 — Android companion & more AI providers
+# FocusWith v0.4.2 — Android companion & more AI providers
 
 FocusWith can now stay with you on Android and connect to more AI providers without giving a phone or model unrestricted access to your server.
 
@@ -15,7 +15,7 @@ FocusWith 现在也可以在 Android 上陪你专注，并支持更多 AI 服务
 
 ## Android preview notes
 
-- v0.4.1 fixes the GitHub Actions Android toolchain setup so the downloadable debug APK can be built correctly.
+- v0.4.2 fixes the GitHub Actions Android toolchain and documents the owner-granted usage-access permission for a clean Lint build.
 - Android usage access, notifications, and the optional overlay permission must be granted explicitly by the device owner.
 - Some Android vendors may require removing battery restrictions for reliable background monitoring.
 - The first GitHub build produces a debug APK for testing. A signed release APK will follow before broad public distribution.

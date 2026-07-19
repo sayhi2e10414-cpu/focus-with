@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.2 — 2026-07-19
+
+- Documented and narrowly suppressed Android Lint's protected-permission warning for the owner-granted usage-access permission required by the companion.
+
 ## 0.4.1 — 2026-07-19
 
 - Fixed the GitHub Actions Android build by installing the official Android command-line tools before invoking `sdkmanager`.
