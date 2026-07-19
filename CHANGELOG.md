@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 — 2026-07-19
+
+- Added a complete Simplified Chinese web interface with automatic browser-language detection and a persistent Chinese/English switch.
+- Added a bilingual OAuth approval page and Chinese-interface regression tests.
+
 ## 0.2.0 — 2026-07-18
 
 - Added OAuth-protected Streamable HTTP Remote MCP for Claude.ai.

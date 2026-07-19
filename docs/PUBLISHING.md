@@ -10,8 +10,8 @@
 
 ## Release
 
-- Tag: `v0.2.0`
-- Title: `FocusWith v0.2.0 — First public preview`
+- Tag: `v0.3.0`
+- Title: `FocusWith v0.3.0 — 中文版 / Bilingual UI`
 - Body: use [`RELEASE_NOTES.md`](../RELEASE_NOTES.md)
 - Mark as a pre-release while the project remains on the `0.x` line.
 

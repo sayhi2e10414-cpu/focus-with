@@ -27,14 +27,15 @@ button { cursor: pointer; }
 .topbar p { margin: 18px 0 0; color: var(--muted); font-size: 18px; }
 .eyebrow { color: var(--muted); font-size: 13px; font-weight: 650; letter-spacing: .02em; }
 .top-actions { display: flex; align-items: center; gap: 10px; }
-.primary, .secondary, .danger, .ghost, .icon-button { border: 0; border-radius: 999px; padding: 11px 18px; font-weight: 650; transition: .18s ease; }
+.primary, .secondary, .danger, .ghost, .icon-button, .language-button { border: 0; border-radius: 999px; padding: 11px 18px; font-weight: 650; transition: .18s ease; }
 .primary { background: var(--blue); color: white; }
 .primary:hover { background: var(--blue-hover); transform: translateY(-1px); }
 .secondary { background: var(--surface-soft); color: var(--text); }
-.secondary:hover, .icon-button:hover { background: #e2e2e7; }
+.secondary:hover, .icon-button:hover, .language-button:hover { background: #e2e2e7; }
 .danger { background: #ffe8e8; color: var(--red); }
 .ghost { background: transparent; color: var(--blue); padding-inline: 8px; }
 .icon-button { width: 42px; height: 42px; padding: 0; background: var(--surface-soft); color: var(--text); font-size: 20px; }
+.language-button { min-width: 42px; height: 42px; padding: 0 12px; background: transparent; color: var(--muted); }
 .segmented { width: fit-content; margin: 44px auto 30px; padding: 5px; display: grid; grid-template-columns: repeat(5, minmax(90px, 1fr)); gap: 3px; background: #e8e8ed; border-radius: 18px; }
 .segmented button { border: 0; background: transparent; color: var(--muted); border-radius: 14px; padding: 10px 20px; font-weight: 650; }
 .segmented button.active { background: white; color: var(--text); box-shadow: 0 1px 5px rgba(0,0,0,.09); }

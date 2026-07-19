@@ -122,14 +122,26 @@ def test_remote_oauth_and_mcp_flow():
                 assert authorization.status_code == 302
                 assert authorization.headers["location"].startswith(f"{PUBLIC_URL}/oauth/login?")
 
-                login_page = await client.get(authorization.headers["location"])
+                login_page = await client.get(
+                    authorization.headers["location"],
+                    headers={"Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"},
+                )
                 assert login_page.status_code == 200
+                assert '<html lang="zh-CN">' in login_page.text
+                assert "连接 Claude" in login_page.text
+                assert "读取和更新你的项目、任务与专注计时器" in login_page.text
                 ticket = parse_qs(urlparse(authorization.headers["location"]).query)["ticket"][0]
                 csrf = re.search(r'name="csrf" value="([^"]+)"', login_page.text).group(1)  # type: ignore[union-attr]
+                locale = re.search(r'name="locale" value="([^"]+)"', login_page.text).group(1)  # type: ignore[union-attr]
 
                 login = await client.post(
                     "/oauth/login",
-                    data={"ticket": ticket, "csrf": csrf, "password": "a-safe-test-password"},
+                    data={
+                        "ticket": ticket,
+                        "csrf": csrf,
+                        "locale": locale,
+                        "password": "a-safe-test-password",
+                    },
                 )
                 assert login.status_code == 302
                 callback = urlparse(login.headers["location"])

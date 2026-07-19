@@ -39,6 +39,43 @@ GLOBAL_FAILURE_WINDOW_SECONDS = 15 * 60
 GLOBAL_FAILURE_LIMIT = 20
 MAX_REGISTERED_CLIENTS = 50
 
+OAUTH_COPY = {
+    "en": {
+        "page_title": "Connect to FocusWith",
+        "eyebrow": "FocusWith · private connector",
+        "connect": "Connect {client}",
+        "intro": "Enter your FocusWith admin password to approve this connection.",
+        "permission": "Permission requested",
+        "permission_detail": "Read and update your projects, tasks, and focus timer.",
+        "password": "Admin password",
+        "submit": "Connect securely",
+        "note": "The password is checked by your own server. Claude receives a revocable token, never your password.",
+        "switch": "简体中文",
+        "wrong_password": "That password was not correct.",
+        "invalid_or_expired": "This authorization request is invalid or expired.",
+        "invalid": "Invalid authorization request.",
+        "too_many_attempts": "Too many attempts. Start the connection again.",
+        "locked": "Login is temporarily locked. Try again later.",
+    },
+    "zh-CN": {
+        "page_title": "连接到 FocusWith",
+        "eyebrow": "FocusWith · 私密连接",
+        "connect": "连接 {client}",
+        "intro": "输入 FocusWith 管理密码，确认允许这次连接。",
+        "permission": "申请的权限",
+        "permission_detail": "读取和更新你的项目、任务与专注计时器。",
+        "password": "管理密码",
+        "submit": "安全连接",
+        "note": "密码只由你自己的服务器校验。Claude 获得的是可撤销 Token，永远不会收到你的密码。",
+        "switch": "English",
+        "wrong_password": "密码不正确。",
+        "invalid_or_expired": "这次授权请求无效或已经过期。",
+        "invalid": "授权请求无效。",
+        "too_many_attempts": "尝试次数过多，请重新发起连接。",
+        "locked": "登录暂时锁定，请稍后再试。",
+    },
+}
+
 
 class StoredRefreshToken(RefreshToken):
     family_id: str
@@ -164,32 +201,50 @@ class FocusOAuthProvider(
             return None
         return record
 
+    @staticmethod
+    def _locale(raw: str = "") -> str:
+        return "zh-CN" if raw.lower().startswith("zh") else "en"
+
+    @classmethod
+    def _request_locale(cls, request: Request) -> str:
+        requested = request.query_params.get("lang", "")
+        if requested:
+            return cls._locale(requested)
+        return cls._locale(request.headers.get("accept-language", ""))
+
     def _render_login(
         self,
         *,
         ticket: str,
         csrf: str,
         client_name: str,
+        locale: str = "en",
         error: str = "",
         status_code: int = 200,
     ) -> HTMLResponse:
+        locale = self._locale(locale)
+        copy = OAUTH_COPY[locale]
         safe_ticket = html.escape(ticket, quote=True)
         safe_csrf = html.escape(csrf, quote=True)
         safe_client = html.escape(client_name or "Claude", quote=True)
         error_html = f'<p class="error" role="alert">{html.escape(error)}</p>' if error else ""
+        other_locale = "en" if locale == "zh-CN" else "zh-CN"
+        switch_url = html.escape(
+            f"/oauth/login?{urlencode({'ticket': ticket, 'lang': other_locale})}", quote=True
+        )
         body = f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Connect to FocusWith</title><style>
+<html lang="{locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{copy['page_title']}</title><style>
 :root{{color-scheme:light}}*{{box-sizing:border-box}}body{{margin:0;background:#f5f5f7;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}}
 main{{width:min(480px,calc(100% - 32px));margin:10vh auto;background:#fff;border-radius:24px;padding:36px;box-shadow:0 18px 60px rgba(0,0,0,.08)}}
 .eyebrow{{color:#6e6e73;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}}h1{{font-size:32px;line-height:1.1;margin:10px 0 12px}}p{{color:#6e6e73;line-height:1.5}}.permission{{background:#f5f5f7;border-radius:16px;padding:16px;margin:22px 0}}
 label{{display:block;font-size:14px;font-weight:600;margin:20px 0 8px}}input{{width:100%;border:0;background:#f0f0f2;border-radius:12px;padding:14px 16px;font:inherit;outline:0}}input:focus{{box-shadow:0 0 0 3px rgba(0,113,227,.2)}}
-button{{width:100%;margin-top:18px;border:0;border-radius:999px;background:#0071e3;color:#fff;padding:14px 18px;font:inherit;font-weight:650;cursor:pointer}}.error{{color:#b42318;background:#fff1f0;border-radius:12px;padding:12px}}small{{display:block;color:#86868b;margin-top:18px;line-height:1.45}}
-</style></head><body><main><div class="eyebrow">FocusWith · private connector</div><h1>Connect {safe_client}</h1>
-<p>Enter your FocusWith admin password to approve this connection.</p><div class="permission"><strong>Permission requested</strong><p>Read and update your projects, tasks, and focus timer.</p></div>
-{error_html}<form method="post" action="/oauth/login" autocomplete="off"><input type="hidden" name="ticket" value="{safe_ticket}"><input type="hidden" name="csrf" value="{safe_csrf}">
-<label for="password">Admin password</label><input id="password" name="password" type="password" required autofocus minlength="12"><button type="submit">Connect securely</button></form>
-<small>The password is checked by your own server. Claude receives a revocable token, never your password.</small></main></body></html>"""
+button{{width:100%;margin-top:18px;border:0;border-radius:999px;background:#0071e3;color:#fff;padding:14px 18px;font:inherit;font-weight:650;cursor:pointer}}.error{{color:#b42318;background:#fff1f0;border-radius:12px;padding:12px}}small{{display:block;color:#86868b;margin-top:18px;line-height:1.45}}.language{{float:right;color:#0071e3;font-size:13px;text-decoration:none;font-weight:600}}
+</style></head><body><main><a class="language" href="{switch_url}">{copy['switch']}</a><div class="eyebrow">{copy['eyebrow']}</div><h1>{copy['connect'].format(client=safe_client)}</h1>
+<p>{copy['intro']}</p><div class="permission"><strong>{copy['permission']}</strong><p>{copy['permission_detail']}</p></div>
+{error_html}<form method="post" action="/oauth/login" autocomplete="off"><input type="hidden" name="ticket" value="{safe_ticket}"><input type="hidden" name="csrf" value="{safe_csrf}"><input type="hidden" name="locale" value="{locale}">
+<label for="password">{copy['password']}</label><input id="password" name="password" type="password" required autofocus minlength="12"><button type="submit">{copy['submit']}</button></form>
+<small>{copy['note']}</small></main></body></html>"""
         response = HTMLResponse(body, status_code=status_code)
         response.headers.update(
             {
@@ -213,11 +268,12 @@ button{{width:100%;margin-top:18px;border:0;border-radius:999px;background:#0071
 
     async def login_page(self, request: Request) -> Response:
         ticket = request.query_params.get("ticket", "")
+        locale = self._request_locale(request)
         db = self.session_factory()
         try:
             record = self._login_record(db, ticket)
             if not record:
-                return HTMLResponse("This authorization request is invalid or expired.", status_code=400)
+                return HTMLResponse(OAUTH_COPY[locale]["invalid_or_expired"], status_code=400)
             client = db.get(models.OAuthClient, record.client_id)
             client_info = OAuthClientInformationFull.model_validate_json(client.data_json) if client else None
             csrf = secrets.token_urlsafe(32)
@@ -227,6 +283,7 @@ button{{width:100%;margin-top:18px;border:0;border-radius:999px;background:#0071
                 ticket=ticket,
                 csrf=csrf,
                 client_name=(client_info.client_name if client_info else None) or "Claude",
+                locale=locale,
             )
         finally:
             db.close()
@@ -236,16 +293,18 @@ button{{width:100%;margin-top:18px;border:0;border-radius:999px;background:#0071
         ticket = form.get("ticket")
         csrf = form.get("csrf")
         password = form.get("password")
+        locale = self._locale(str(form.get("locale") or request.headers.get("accept-language", "")))
+        copy = OAUTH_COPY[locale]
         cookie_csrf = request.cookies.get("focus_oauth_csrf", "")
         if not all(isinstance(item, str) and item for item in (ticket, csrf, password)):
-            return HTMLResponse("Invalid authorization request.", status_code=400)
+            return HTMLResponse(copy["invalid"], status_code=400)
 
         assert isinstance(ticket, str) and isinstance(csrf, str) and isinstance(password, str)
         db = self.session_factory()
         try:
             record = self._login_record(db, ticket)
             if not record:
-                return HTMLResponse("This authorization request is invalid or expired.", status_code=400)
+                return HTMLResponse(copy["invalid_or_expired"], status_code=400)
             client_record = db.get(models.OAuthClient, record.client_id)
             client_info = (
                 OAuthClientInformationFull.model_validate_json(client_record.data_json) if client_record else None
@@ -258,19 +317,19 @@ button{{width:100%;margin-top:18px;border:0;border-radius:999px;background:#0071
                 and secrets.compare_digest(record.csrf_hash, opaque_hash(csrf))
             )
             if not csrf_ok:
-                return HTMLResponse("Invalid authorization request.", status_code=400)
+                return HTMLResponse(copy["invalid"], status_code=400)
 
             if record.failed_attempts >= MAX_LOGIN_ATTEMPTS:
                 record.used_at_epoch = int(time.time())
                 db.commit()
-                return HTMLResponse("Too many attempts. Start the connection again.", status_code=429)
+                return HTMLResponse(copy["too_many_attempts"], status_code=429)
 
             now = int(time.time())
             recent_failures = db.query(models.OAuthLoginFailure).filter(
                 models.OAuthLoginFailure.occurred_at_epoch >= now - GLOBAL_FAILURE_WINDOW_SECONDS
             ).count()
             if recent_failures >= GLOBAL_FAILURE_LIMIT:
-                return HTMLResponse("Login is temporarily locked. Try again later.", status_code=429)
+                return HTMLResponse(copy["locked"], status_code=429)
 
             if not verify_secret(password, self.password_hash):
                 record.failed_attempts += 1
@@ -282,7 +341,8 @@ button{{width:100%;margin-top:18px;border:0;border-radius:999px;background:#0071
                     ticket=ticket,
                     csrf=new_csrf,
                     client_name=client_name,
-                    error="That password was not correct.",
+                    locale=locale,
+                    error=copy["wrong_password"],
                     status_code=401,
                 )
 

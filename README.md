@@ -14,6 +14,8 @@ FocusWith turns vague goals into directions, projects, tasks, and focused sessio
 
 It works without Telegram and without an AI key. The core is a self-hosted web app; optional adapters add an AI companion, MCP connections, Telegram buttons, iPhone Shortcut events, and a native macOS floating timer.
 
+The web interface automatically follows Chinese browsers and can be switched between Simplified Chinese and English at any time. The choice is stored only in that browser.
+
 > **Public preview:** FocusWith is currently a single-owner `0.x` project. Back up your data before upgrading and review AI tool actions before approving them.
 
 ## Why FocusWith
@@ -27,6 +29,7 @@ It works without Telegram and without an AI key. The core is a self-hosted web a
 ## What works
 
 - Directions, projects, actionable tasks, and manual project assignment.
+- Simplified Chinese and English interfaces with automatic browser-language detection and a persistent language switch.
 - Markdown plan import with duration parsing and break recognition.
 - Pomodoro, deep-focus, free-focus, and count-up sessions with custom durations.
 - Pause, resume, finish, cancel, complete, and abandon flows.
