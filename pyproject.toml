@@ -1,6 +1,6 @@
 [project]
 name = "focus-with"
-version = "0.4.0"
+version = "0.4.1"
 description = "A self-hosted focus system designed for humans and AI assistants."
 license = "MIT"
 requires-python = ">=3.11"

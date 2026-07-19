@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.4.1 — 2026-07-19
+
+- Fixed the GitHub Actions Android build by installing the official Android command-line tools before invoking `sdkmanager`.
+- Limited automatic Android builds to `main` pushes so release tags do not create duplicate runs.
+
 ## 0.4.0 — 2026-07-19
 
 - Added OpenAI Responses API support and expanded provider/MCP setup guidance for OpenAI, DeepSeek, GLM, Ollama, Codex, Claude, and ChatGPT.
