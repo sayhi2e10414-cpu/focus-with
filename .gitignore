@@ -13,3 +13,8 @@ generated/
 *.sqlite*
 .DS_Store
 macos/FocusFloat/.build/
+android/.gradle/
+android/local.properties
+android/**/build/
+*.jks
+*.keystore

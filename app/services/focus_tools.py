@@ -241,3 +241,15 @@ def openai_tools() -> list[dict[str, Any]]:
         }
         for item in TOOL_SPECS
     ]
+
+
+def openai_response_tools() -> list[dict[str, Any]]:
+    return [
+        {
+            "type": "function",
+            "name": item["name"],
+            "description": item["description"],
+            "parameters": item["input_schema"],
+        }
+        for item in TOOL_SPECS
+    ]

@@ -7,7 +7,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from .focus_tools import anthropic_tools, execute_focus_tool, openai_tools
+from .focus_tools import anthropic_tools, execute_focus_tool, openai_response_tools, openai_tools
 
 
 class CompanionError(RuntimeError):
@@ -122,10 +122,66 @@ async def _openai_reply(db: Session, messages: list[dict[str, str]]) -> tuple[st
     raise CompanionError("The companion used too many tool steps. Try a smaller request.")
 
 
+async def _openai_responses_reply(
+    db: Session, messages: list[dict[str, str]]
+) -> tuple[str, list[dict[str, Any]]]:
+    base = settings.ai_base_url or "https://api.openai.com/v1"
+    url = f"{base.rstrip('/')}/responses"
+    headers = {"content-type": "application/json"}
+    if settings.ai_api_key:
+        headers["authorization"] = f"Bearer {settings.ai_api_key}"
+    conversation: list[dict[str, Any]] = [
+        {"role": item["role"], "content": item["content"]} for item in messages
+    ]
+    actions: list[dict[str, Any]] = []
+
+    for _ in range(6):
+        result = await _post(url, headers=headers, payload={
+            "model": settings.ai_model,
+            "instructions": SYSTEM_PROMPT,
+            "input": conversation,
+            "tools": openai_response_tools(),
+            "tool_choice": "auto",
+        })
+        output = result.get("output") or []
+        calls = [item for item in output if item.get("type") == "function_call"]
+        if not calls:
+            text = str(result.get("output_text") or "").strip()
+            if not text:
+                text = "\n".join(
+                    part.get("text", "")
+                    for item in output
+                    if item.get("type") == "message"
+                    for part in item.get("content", [])
+                    if part.get("type") == "output_text"
+                ).strip()
+            return text or "Done.", actions
+
+        conversation.extend(output)
+        for call in calls:
+            try:
+                arguments = json.loads(call.get("arguments") or "{}")
+                tool_output = execute_focus_tool(db, call.get("name", ""), arguments)
+                db.flush()
+                actions.append({"tool": call.get("name"), "success": True})
+                payload = json.dumps(tool_output, ensure_ascii=False)
+            except Exception as exc:
+                payload = json.dumps({"error": str(exc)}, ensure_ascii=False)
+                actions.append({"tool": call.get("name", "unknown"), "success": False, "error": str(exc)})
+            conversation.append({
+                "type": "function_call_output",
+                "call_id": call.get("call_id"),
+                "output": payload,
+            })
+    raise CompanionError("The companion used too many tool steps. Try a smaller request.")
+
+
 async def companion_reply(db: Session, messages: list[dict[str, str]]) -> tuple[str, list[dict[str, Any]]]:
     _ensure_configured()
     if settings.ai_provider == "anthropic":
         return await _anthropic_reply(db, messages)
+    if settings.ai_provider in {"openai-responses", "openai_responses", "responses"}:
+        return await _openai_responses_reply(db, messages)
     if settings.ai_provider in {"openai-compatible", "openai_compatible", "openai"}:
         return await _openai_reply(db, messages)
     raise CompanionError(f"Unsupported FOCUS_AI_PROVIDER: {settings.ai_provider}")

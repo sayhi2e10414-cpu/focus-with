@@ -7,7 +7,7 @@ from ..auth import require_phone_token
 from ..database import get_db
 from ..schemas import PhoneEventInput
 from ..config import settings
-from ..services.core import phone_usage_for_date, record_phone_event
+from ..services.core import active_session, phone_usage_for_date, record_phone_event, serialize_session, utcnow
 
 
 router = APIRouter(prefix="/api/phone", dependencies=[Depends(require_phone_token)])
@@ -36,3 +36,17 @@ def phone_usage(
 ):
     local_today = datetime.now(timezone.utc).astimezone(settings.timezone).date()
     return {"success": True, "data": phone_usage_for_date(db, day or local_today, device_id)}
+
+
+@router.get("/focus")
+def phone_focus(db: Session = Depends(get_db)):
+    """Return only the active timer fields needed by a trusted phone companion."""
+    now = utcnow()
+    current = active_session(db)
+    return {
+        "success": True,
+        "data": {
+            "server_time": now.replace(tzinfo=timezone.utc).isoformat(),
+            "active_session": serialize_session(current, now) if current else None,
+        },
+    }

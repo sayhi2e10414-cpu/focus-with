@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">FocusWith</string>
+    <string name="title">FocusWith 手机伴侣</string>
+    <string name="subtitle">同步应用使用时间，并在专注时显示计时。</string>
+    <string name="server_url">FocusWith HTTPS 地址</string>
+    <string name="phone_token">手机 Token</string>
+    <string name="monitored_apps">监控应用（每行：名称 | 包名）</string>
+    <string name="save">保存连接</string>
+    <string name="usage_access">使用情况访问</string>
+    <string name="usage_access_detail">用于识别所选应用何时进入前台，不读取应用内容。</string>
+    <string name="open_settings">打开设置</string>
+    <string name="overlay">悬浮计时胶囊</string>
+    <string name="overlay_detail">可选权限；开启后在其他应用上方显示当前计时。</string>
+    <string name="notifications">常驻计时通知</string>
+    <string name="notifications_detail">监测运行时必须显示，点按可返回设置。</string>
+    <string name="start">开始监测</string>
+    <string name="stop">停止监测</string>
+    <string name="status_ready">尚未开始</string>
+    <string name="status_running">正在监测已选应用</string>
+    <string name="saved">已安全保存</string>
+    <string name="missing_config">请先填写 HTTPS 地址和手机 Token</string>
+    <string name="missing_usage">请先允许使用情况访问</string>
+    <string name="invalid_https">请输入 https:// 开头的 FocusWith 地址</string>
+    <string name="permission_granted">已允许</string>
+    <string name="permission_needed">需要允许</string>
+    <string name="notification_idle">FocusWith 正在监测已选应用</string>
+    <string name="notification_paused">专注已暂停</string>
+    <string name="notification_channel">专注计时与应用监测</string>
+    <string name="open_focus">打开 FocusWith</string>
+    <string name="token_saved_hint">••••••••  · 已保存，留空不修改</string>
+    <string name="privacy_note">使用情况权限只提供应用包名和前后台时间；FocusWith 不读取屏幕、消息或应用内容。手机 Token 使用 Android Keystore 加密保存。</string>
+</resources>

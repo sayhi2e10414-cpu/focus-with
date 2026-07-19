@@ -4,7 +4,7 @@
 
 **A private-by-default focus system that helps turn meaningful plans into finished work.**
 
-[简体中文](README.zh-CN.md) · [Install](#fastest-installation) · [Local MCP](docs/MCP.md) · [Claude.ai Remote MCP](docs/REMOTE_MCP.md)
+[简体中文](README.zh-CN.md) · [Install](#fastest-installation) · [AI providers](docs/AI_PROVIDERS.md) · [Local MCP](docs/MCP.md) · [Remote MCP](docs/REMOTE_MCP.md)
 
 </div>
 
@@ -12,7 +12,7 @@
 
 FocusWith turns vague goals into directions, projects, tasks, and focused sessions. It keeps the core loop simple: choose one thing, start, return when distracted, finish, and decide what comes next.
 
-It works without Telegram and without an AI key. The core is a self-hosted web app; optional adapters add an AI companion, MCP connections, Telegram buttons, iPhone Shortcut events, and a native macOS floating timer.
+It works without Telegram and without an AI key. The core is a self-hosted web app; optional adapters add an AI companion, MCP connections, Telegram buttons, iPhone Shortcut events, an Android usage/timer companion, and a native macOS floating timer.
 
 The web interface automatically follows Chinese browsers and can be switched between Simplified Chinese and English at any time. The choice is stored only in that browser.
 
@@ -37,9 +37,10 @@ The web interface automatically follows Chinese browsers and can be switched bet
 - Editable monitored-app policy, grace period, strike count, and consequence pool.
 - Browser notifications and optional Telegram delivery with action buttons.
 - iPhone Shortcut event ingestion and daily app-usage summaries.
-- Built-in companion using Anthropic or any OpenAI-compatible API, including compatible local endpoints.
+- Android usage-event sync with a persistent timer notification and an optional floating capsule.
+- Built-in companion using OpenAI Responses, Anthropic, or an OpenAI-compatible API, including compatible local endpoints.
 - Seven annotated MCP tools for Claude Desktop/Code, Codex, and other local clients.
-- Optional OAuth-protected Remote MCP for Claude.ai, with automated clean-VPS HTTPS deployment.
+- Optional OAuth-protected Remote MCP for Claude.ai and compatible ChatGPT workspaces, with automated clean-VPS HTTPS deployment.
 - Native macOS floating timer built with Command Line Tools; full Xcode is not required.
 - Local installer and Docker Compose deployment.
 
@@ -67,7 +68,7 @@ Useful commands:
 
 ## Optional AI and MCP
 
-For the built-in companion, edit the ignored `.env` file and restart FocusWith:
+For the built-in companion, edit the ignored `.env` file and restart FocusWith. The complete provider recipes are in [docs/AI_PROVIDERS.md](docs/AI_PROVIDERS.md).
 
 ```dotenv
 FOCUS_AI_PROVIDER=anthropic
@@ -86,12 +87,13 @@ FOCUS_AI_BASE_URL=https://provider.example/v1
 
 Provider keys stay on the server and are never sent to browser JavaScript.
 
-To use an existing AI client, connect the private local server in [docs/MCP.md](docs/MCP.md). For Claude.ai, follow [docs/REMOTE_MCP.md](docs/REMOTE_MCP.md). Remote mode uses HTTPS, OAuth discovery, Dynamic Client Registration, S256 PKCE, rotating refresh tokens, strict callback allowlisting, and revocation; it is disabled by default.
+To use an existing AI client, connect the private local server in [docs/MCP.md](docs/MCP.md). Claude.ai and eligible ChatGPT workspaces can use the authenticated Remote MCP in [docs/REMOTE_MCP.md](docs/REMOTE_MCP.md). Remote mode uses HTTPS, OAuth discovery, Dynamic Client Registration, S256 PKCE, rotating refresh tokens, strict callback allowlisting, and revocation; it is disabled by default.
 
 ## Optional integrations
 
 - macOS floating timer: `./macos/FocusFloat/install.sh`
 - iPhone Shortcuts: [docs/IPHONE_SHORTCUTS.md](docs/IPHONE_SHORTCUTS.md)
+- Android companion: [docs/ANDROID.md](docs/ANDROID.md)
 - Telegram: set `FOCUS_TELEGRAM_BOT_TOKEN` and `FOCUS_TELEGRAM_CHAT_ID` in `.env`, then restart.
 
 Telegram is a delivery adapter, not the owner of the Focus session. Timer completion and distraction events are created by FocusWith, then delivered to the browser and any enabled channel.
@@ -122,7 +124,7 @@ The script refuses to replace an existing service on ports 80/443. See [docs/REM
 - Runtime data, `.env`, logs, generated apps, and databases are ignored by Git.
 - API/provider tokens are not embedded in JavaScript, documentation, MCP configuration, or the macOS bundle.
 - Remote MCP cannot run with only half of its OAuth configuration.
-- Claude.ai Remote MCP uses a salted owner-password hash, strict callback allowlisting, PKCE, scoped audience-bound bearer tokens, rotation, and revocation.
+- Remote MCP uses a salted owner-password hash, strict callback allowlisting, PKCE, scoped audience-bound bearer tokens, rotation, and revocation.
 - OAuth bearer tokens, refresh tokens, authorization codes, login tickets, and CSRF artifacts are stored only as hashes.
 
 Read [SECURITY.md](SECURITY.md) before exposing FocusWith outside localhost.

@@ -1,10 +1,10 @@
-# Secure Remote MCP for Claude.ai
+# Secure Remote MCP for Claude.ai and ChatGPT
 
-Remote mode lets Claude.ai reach the same private projects, tasks, and timer as the FocusWith web app. It is optional: local FocusWith and the stdio MCP connector continue to work without a domain or VPS.
+Remote mode lets an OAuth-capable remote MCP client reach the same private projects, tasks, and timer as the FocusWith web app. It is optional: local FocusWith and the stdio MCP connector continue to work without a domain or VPS.
 
 ## What is automated
 
-The clean-VPS deployment script creates private tokens, hashes the OAuth admin password, starts FocusWith and Caddy with Docker Compose, obtains an HTTPS certificate, and verifies the public health endpoint. Connecting the deployed server to a Claude account remains one deliberate user action because Claude must show and complete the OAuth approval flow.
+The clean-VPS deployment script creates private tokens, hashes the OAuth admin password, starts FocusWith and Caddy with Docker Compose, obtains an HTTPS certificate, and verifies the public health endpoint. Connecting an AI account remains one deliberate user action because the client must show and complete the OAuth approval flow.
 
 You need:
 
@@ -31,6 +31,16 @@ If the command runs non-interactively, it generates an admin password in `.focus
 5. Enable the connector in the conversations where you want Claude to help with FocusWith.
 
 No Client ID or Client Secret is needed in Claude's advanced settings because FocusWith supports Dynamic Client Registration and PKCE.
+
+## Connect ChatGPT
+
+ChatGPT developer-mode apps also connect to a public HTTPS MCP URL and can use OAuth discovery, Dynamic Client Registration, and PKCE.
+
+1. In ChatGPT developer mode, create an app and enter `https://focus.example.com/mcp`.
+2. If ChatGPT's dynamically registered callback is rejected, copy its exact HTTPS callback URI into `FOCUS_OAUTH_ALLOWED_REDIRECT_URIS` alongside the Claude callbacks, then recreate the Focus container.
+3. Complete the FocusWith approval page and inspect the seven advertised tools before enabling them.
+
+Never replace the callback allowlist with a wildcard. ChatGPT plan, workspace, and write-tool availability is controlled by OpenAI and may differ between accounts.
 
 ## VPS with an existing reverse proxy
 

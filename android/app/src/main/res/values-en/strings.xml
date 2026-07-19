@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">FocusWith</string>
+    <string name="title">FocusWith Companion</string>
+    <string name="subtitle">Sync app usage and keep the active timer nearby.</string>
+    <string name="server_url">FocusWith HTTPS URL</string>
+    <string name="phone_token">Phone token</string>
+    <string name="monitored_apps">Monitored apps (one per line: name | package)</string>
+    <string name="save">Save connection</string>
+    <string name="usage_access">Usage access</string>
+    <string name="usage_access_detail">Detects when selected apps enter the foreground. It cannot read their content.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="overlay">Floating timer capsule</string>
+    <string name="overlay_detail">Optional; shows the active timer above other apps.</string>
+    <string name="notifications">Persistent timer notification</string>
+    <string name="notifications_detail">Required while monitoring; tap it to return here.</string>
+    <string name="start">Start monitoring</string>
+    <string name="stop">Stop monitoring</string>
+    <string name="status_ready">Not running</string>
+    <string name="status_running">Monitoring selected apps</string>
+    <string name="saved">Saved securely</string>
+    <string name="missing_config">Enter the HTTPS URL and phone token first</string>
+    <string name="missing_usage">Allow usage access first</string>
+    <string name="invalid_https">Use an https:// FocusWith URL</string>
+    <string name="permission_granted">Allowed</string>
+    <string name="permission_needed">Permission needed</string>
+    <string name="notification_idle">FocusWith is monitoring selected apps</string>
+    <string name="notification_paused">Focus is paused</string>
+    <string name="notification_channel">Focus timer and app monitoring</string>
+    <string name="open_focus">Open FocusWith</string>
+    <string name="token_saved_hint">••••••••  · saved; leave blank to keep it</string>
+    <string name="privacy_note">Usage access provides package names and foreground timestamps only. FocusWith cannot read screens, messages, or app content. The phone token is encrypted with Android Keystore.</string>
+</resources>
