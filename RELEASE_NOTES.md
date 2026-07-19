@@ -1,22 +1,29 @@
-# FocusWith v0.3.0 — 中文版 / Bilingual UI
+# FocusWith v0.4.0 — Android companion & more AI providers
 
-FocusWith now has a complete Simplified Chinese interface alongside English. Chinese browsers use it automatically, and every browser can switch languages at any time.
+FocusWith can now stay with you on Android and connect to more AI providers without giving a phone or model unrestricted access to your server.
 
-FocusWith 现在拥有完整的简体中文界面，同时保留 English。中文浏览器会自动显示中文，也可以随时手动切换语言。
+FocusWith 现在也可以在 Android 上陪你专注，并支持更多 AI 服务，同时继续保持最小权限和私有优先。
 
 ## Highlights
 
-- Complete Simplified Chinese coverage across focus, projects, statistics, settings, dialogs, and empty/error states.
-- Automatic browser-language detection with a persistent Chinese/English switch.
-- Bilingual OAuth approval and error pages for secure Remote MCP connections.
-- Chinese screenshots and installation guidance in `README.zh-CN.md`.
-- Regression tests that keep both locale dictionaries in sync and protect interpolation placeholders.
+- Added an Android companion with usage-event monitoring, offline retries, and protection against screen-off false positives.
+- Added a persistent timer notification and an optional draggable system overlay capsule.
+- Added a phone-scoped timer endpoint so the Android companion never needs the full Focus API token.
+- Added OpenAI Responses API support alongside Anthropic and OpenAI-compatible providers such as DeepSeek, GLM, and Ollama.
+- Added setup guidance for Codex, Claude, ChatGPT Remote MCP, and local-model workflows.
+- Kept monitored Android packages editable and stored the phone token with Android Keystore encryption.
 
-## Preview notes
+## Android preview notes
+
+- Android usage access, notifications, and the optional overlay permission must be granted explicitly by the device owner.
+- Some Android vendors may require removing battery restrictions for reliable background monitoring.
+- The first GitHub build produces a debug APK for testing. A signed release APK will follow before broad public distribution.
+
+## Upgrade notes
 
 - FocusWith is still designed for one owner per deployment.
-- Remote MCP is disabled by default. Follow `docs/REMOTE_MCP.md`; do not expose an unauthenticated write-capable endpoint.
-- Back up the SQLite database or Docker volume before upgrading.
-- Review AI tool calls before allowing them to modify tasks or timer state.
+- Existing web data and APIs remain backward compatible.
+- Remote MCP and AI providers remain disabled until configured.
+- Back up the SQLite database or Docker volume before upgrading a production deployment.
 
-See `README.md`, `README.zh-CN.md`, and `SECURITY.md` before installation or public deployment.
+See `README.md`, `README.zh-CN.md`, `docs/ANDROID.md`, `docs/AI_PROVIDERS.md`, and `SECURITY.md` before installation or public deployment.

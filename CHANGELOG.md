@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 — 2026-07-19
+
 - Added OpenAI Responses API support and expanded provider/MCP setup guidance for OpenAI, DeepSeek, GLM, Ollama, Codex, Claude, and ChatGPT.
 - Added an Android companion source project with usage-event sync, offline retries, a persistent timer notification, and an optional floating timer capsule.
 - Added a phone-scoped active-timer endpoint for Android without exposing the full Focus API.

@@ -6,12 +6,12 @@
 
 ## Suggested topics
 
-`focus` · `productivity` · `pomodoro` · `self-hosted` · `mcp` · `claude` · `fastapi` · `sqlite` · `telegram` · `macos`
+`focus` · `productivity` · `pomodoro` · `self-hosted` · `mcp` · `ai` · `fastapi` · `android` · `telegram` · `macos`
 
 ## Release
 
-- Tag: `v0.3.0`
-- Title: `FocusWith v0.3.0 — 中文版 / Bilingual UI`
+- Tag: `v0.4.0`
+- Title: `FocusWith v0.4.0 — Android companion & more AI providers`
 - Body: use [`RELEASE_NOTES.md`](../RELEASE_NOTES.md)
 - Mark as a pre-release while the project remains on the `0.x` line.
 
