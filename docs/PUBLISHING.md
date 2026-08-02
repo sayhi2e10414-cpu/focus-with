@@ -10,12 +10,15 @@
 
 ## Release
 
-- Tag: `v0.6.0`
-- Title: `FocusWith v0.6.0 — Local Camera Companion`
+- Tag: `v0.7.0`
+- Title: `FocusWith v0.7.0 — Rewards & Windows Preview`
 - Body: use [`RELEASE_NOTES.md`](../RELEASE_NOTES.md)
 - Mark as a pre-release while the project remains on the `0.x` line.
 
-Pushing the annotated version tag builds, verifies, and attaches a signed Android APK plus its SHA-256 checksum. Keep the signing keystore backed up outside Git and store CI copies only in encrypted GitHub Actions secrets.
+Pushing the annotated version tag builds, verifies, and attaches a signed Android
+APK and an experimental unsigned Windows x64 ZIP, with a SHA-256 checksum for
+each. Keep the Android signing keystore backed up outside Git and store CI copies
+only in encrypted GitHub Actions secrets.
 
 ## 中文发布动态
 

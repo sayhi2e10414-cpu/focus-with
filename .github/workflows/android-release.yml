@@ -1,4 +1,4 @@
-name: Android Release
+name: Release
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -43,13 +43,55 @@ jobs:
           "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/release/app-release.apk
           cp android/app/build/outputs/apk/release/app-release.apk "FocusWith-Android-${GITHUB_REF_NAME}.apk"
           sha256sum "FocusWith-Android-${GITHUB_REF_NAME}.apk" > "FocusWith-Android-${GITHUB_REF_NAME}.apk.sha256"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-android
+          path: |
+            FocusWith-Android-${{ github.ref_name }}.apk
+            FocusWith-Android-${{ github.ref_name }}.apk.sha256
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          dotnet-version: "8.0.x"
+      - name: Test and publish Windows companion
+        shell: pwsh
+        run: ./windows/FocusFloat/build.ps1 -Configuration Release -Runtime win-x64
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-windows
+          path: |
+            windows/FocusFloat/artifacts/FocusWith-Windows-win-x64.zip
+            windows/FocusFloat/artifacts/FocusWith-Windows-win-x64.zip.sha256
+          if-no-files-found: error
+
+  release:
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+      - name: Verify release checksums
+        working-directory: release-assets
+        run: |
+          sha256sum --check "FocusWith-Android-${GITHUB_REF_NAME}.apk.sha256"
+          sha256sum --check "FocusWith-Windows-win-x64.zip.sha256"
       - name: Publish GitHub pre-release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          release_title="$(sed -n 's/^# //p' RELEASE_NOTES.md | head -n 1)"
+          test -n "$release_title"
           gh release create "$GITHUB_REF_NAME" \
-            "FocusWith-Android-${GITHUB_REF_NAME}.apk" \
-            "FocusWith-Android-${GITHUB_REF_NAME}.apk.sha256" \
-            --title "FocusWith ${GITHUB_REF_NAME}" \
+            release-assets/* \
+            --title "$release_title" \
             --notes-file RELEASE_NOTES.md \
             --prerelease

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.7.0 — 2026-08-02
+
 - Added editable uninterrupted-focus rewards with a default example, selectable
   targets, persistent earned inventory, explicit redemption, and bilingual Web UI.
 - Added privacy-minimal camera heartbeats and automatic evidence fallback from
