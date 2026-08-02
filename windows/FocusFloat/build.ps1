@@ -34,4 +34,8 @@ dotnet publish $AppProject `
     --output $PublishDirectory
 
 Compress-Archive -Path (Join-Path $PublishDirectory "*") -DestinationPath $Archive
+$ArchiveHash = (Get-FileHash -Algorithm SHA256 -Path $Archive).Hash.ToLowerInvariant()
+"$ArchiveHash  $(Split-Path -Leaf $Archive)" |
+    Set-Content -Encoding ascii -Path "$Archive.sha256"
 Write-Host "Built $Archive"
+Write-Host "SHA-256 $ArchiveHash"

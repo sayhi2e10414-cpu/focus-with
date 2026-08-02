@@ -24,10 +24,11 @@ Windows 10/11 computer, open PowerShell in the repository, and run:
 ```
 
 The script runs the portable unit tests, publishes a self-contained unpackaged
-WinUI 3 app, and creates:
+WinUI 3 app, and creates the archive plus its SHA-256 checksum:
 
 ```text
 windows\FocusFloat\artifacts\FocusWith-Windows-win-x64.zip
+windows\FocusFloat\artifacts\FocusWith-Windows-win-x64.zip.sha256
 ```
 
 Extract the zip before running `FocusFloat.Windows.exe`. Windows may show a
