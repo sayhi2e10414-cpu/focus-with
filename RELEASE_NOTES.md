@@ -1,30 +1,32 @@
-# FocusWith v0.5.1 — Public Android companion & more AI providers
+# FocusWith v0.6.0 — Local Camera Companion
 
-FocusWith can now stay with you on Android and connect to more AI providers without giving a phone or model unrestricted access to your server.
+FocusWith can now notice when a phone remains in view during a focus session without sending camera frames away from the computer.
 
-FocusWith 现在也可以在 Android 上陪你专注，并支持更多 AI 服务，同时继续保持最小权限和私有优先。
+FocusWith 现在可以在专注时通过本机摄像头识别画面中的手机，同时不把摄像头画面发送到电脑之外。
 
 ## Highlights
 
-- Added an Android companion with usage-event monitoring, offline retries, and protection against screen-off false positives.
-- Added a persistent timer notification and an optional draggable system overlay capsule.
-- Added a phone-scoped timer endpoint so the Android companion never needs the full Focus API token.
-- Added OpenAI Responses API support alongside Anthropic and OpenAI-compatible providers such as DeepSeek, GLM, and Ollama.
-- Added setup guidance for Codex, Claude, ChatGPT Remote MCP, and local-model workflows.
-- Kept monitored Android packages editable and stored the phone token with Android Keystore encryption.
+- Added an opt-in Camera Companion to the native macOS FocusFloat window.
+- Added local phone detection through Apple Vision and Core ML at about two frames per second.
+- Added temporal smoothing: two positive frames confirm a phone, four misses are tolerated, and a reminder is eligible after ten sustained seconds.
+- Added a 60-second local cooldown plus the existing server-side reminder cooldown and strike policy.
+- Added a visible camera preview, detection state, one-click stop control, and macOS camera permission explanation.
+- Added a platform-neutral, authenticated `/api/vision-events/phone` endpoint for future Windows and other native companions.
 
-## Android preview notes
+## Privacy and security
 
-- v0.5.1 is the first publicly downloadable, signed Android build. GitHub Releases also includes its SHA-256 checksum.
-- Android usage access, notifications, and the optional overlay permission must be granted explicitly by the device owner.
-- Some Android vendors may require removing battery restrictions for reliable background monitoring.
-- Android may ask users to allow their browser or file manager to install apps from GitHub because the APK is distributed outside Google Play.
+- Camera frames, crops, confidence values, bounding boxes, and embeddings stay inside FocusFloat.
+- The server accepts only an event ID, sustained duration, timestamp, and client source. Unknown and image-derived fields are rejected.
+- Event IDs are hashed for idempotency before storage.
+- The Core ML model is downloaded from Apple's model assets during the first build and verified against a pinned SHA-256 checksum. It is not committed to the repository.
+- Camera monitoring starts only after the owner presses **Start camera** and remains visibly indicated while active.
 
 ## Upgrade notes
 
-- FocusWith is still designed for one owner per deployment.
-- Existing web data and APIs remain backward compatible.
-- Remote MCP and AI providers remain disabled until configured.
+- Existing SQLite installations are migrated automatically. The migration preserves existing phone-app intervention records while allowing camera-originated interventions.
+- Existing web, phone, Android, AI, Telegram, and MCP behavior remains backward compatible.
+- The included signed Android APK is versioned to 0.6.0 but does not add camera monitoring; Camera Companion is currently implemented on macOS.
+- Windows can use the same server contract, but no Windows executable is included in this release.
 - Back up the SQLite database or Docker volume before upgrading a production deployment.
 
-See `README.md`, `README.zh-CN.md`, `docs/ANDROID.md`, `docs/AI_PROVIDERS.md`, and `SECURITY.md` before installation or public deployment.
+See `docs/CAMERA_COMPANION.md`, `macos/FocusFloat/README.md`, `README.md`, `README.zh-CN.md`, and `SECURITY.md` before installation or public deployment.

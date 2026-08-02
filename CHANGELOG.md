@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.6.0 — 2026-08-02
+
 - Added an opt-in macOS Camera Companion with local Vision/Core ML phone detection, temporal smoothing, and visible camera controls.
 - Added a privacy-minimal, idempotent camera-distraction endpoint shared by future Windows and other native companions.
 - Added a repeatable SQLite migration that preserves existing phone-app interventions while generalizing their source.
