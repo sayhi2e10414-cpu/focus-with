@@ -135,7 +135,11 @@ class Intervention(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("focus_sessions.id"), index=True)
     task_id: Mapped[Optional[int]] = mapped_column(ForeignKey("tasks.id"), index=True)
-    phone_open_event_id: Mapped[int] = mapped_column(ForeignKey("phone_app_events.id"), unique=True, index=True)
+    phone_open_event_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("phone_app_events.id"), unique=True, index=True
+    )
+    source_type: Mapped[str] = mapped_column(String(40), default="phone_app", index=True)
+    source_event_id: Mapped[Optional[str]] = mapped_column(String(160), unique=True, index=True)
     app_name: Mapped[str] = mapped_column(String(120), index=True)
     opened_at: Mapped[datetime] = mapped_column(DateTime)
     closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)

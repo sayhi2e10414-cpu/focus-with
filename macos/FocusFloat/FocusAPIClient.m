@@ -1,5 +1,15 @@
 #import "FocusAPIClient.h"
 
+static NSString *FocusISO8601FromDate(NSDate *date) {
+    static NSISO8601DateFormatter *formatter;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        formatter = [[NSISO8601DateFormatter alloc] init];
+        formatter.formatOptions = NSISO8601DateFormatWithInternetDateTime;
+    });
+    return [formatter stringFromDate:date];
+}
+
 @interface FocusAPIClient ()
 @property(nonatomic, strong) NSURL *baseURL;
 @property(nonatomic, copy) NSString *token;
@@ -8,6 +18,9 @@
 @property(nonatomic, assign) BOOL requestInFlight;
 @property(nonatomic, copy, readwrite, nullable) NSDictionary *currentSession;
 @property(nonatomic, copy, readwrite, nullable) NSString *currentTitle;
+- (void)submitCameraPhoneEventBody:(NSData *)body
+                           attempt:(NSInteger)attempt
+                        completion:(void (^)(BOOL accepted, NSString *_Nullable message))completion;
 @end
 
 @implementation FocusAPIClient
@@ -96,6 +109,80 @@
             BOOL success = !error && http.statusCode >= 200 && http.statusCode < 300;
             if (completion) completion(success, success ? nil : @"Focus did not accept that action.");
             if (success) [self refresh];
+        });
+    }] resume];
+}
+
++ (NSDictionary *)cameraPhoneEventPayloadWithEventID:(NSString *)eventID
+                                     durationSeconds:(NSInteger)durationSeconds
+                                          detectedAt:(NSDate *)detectedAt {
+    return @{
+        @"event_id": eventID,
+        @"duration_seconds": @(MAX(10, MIN(300, durationSeconds))),
+        @"detected_at": FocusISO8601FromDate(detectedAt),
+        @"source": @"macos_focus_float",
+    };
+}
+
+- (void)reportCameraPhoneDistractionWithEventID:(NSString *)eventID
+                               durationSeconds:(NSInteger)durationSeconds
+                                    detectedAt:(NSDate *)detectedAt
+                                    completion:(void (^)(BOOL, NSString *_Nullable))completion {
+    NSDictionary *payload = [FocusAPIClient cameraPhoneEventPayloadWithEventID:eventID
+                                                               durationSeconds:durationSeconds
+                                                                    detectedAt:detectedAt];
+    NSData *body = [NSJSONSerialization dataWithJSONObject:payload options:0 error:nil];
+    if (!body) {
+        if (completion) completion(NO, @"Could not prepare the camera event.");
+        return;
+    }
+    [self submitCameraPhoneEventBody:body attempt:0 completion:completion];
+}
+
+- (void)submitCameraPhoneEventBody:(NSData *)body
+                           attempt:(NSInteger)attempt
+                        completion:(void (^)(BOOL, NSString *_Nullable))completion {
+    NSMutableURLRequest *request = [self requestForPath:@"api/vision-events/phone" method:@"POST"];
+    request.HTTPBody = body;
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    __weak typeof(self) weakSelf = self;
+    [[self.urlSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        typeof(self) self = weakSelf;
+        if (!self) return;
+        NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
+        BOOL shouldRetry = error != nil || http.statusCode >= 500;
+        if (shouldRetry && attempt < 2) {
+            NSTimeInterval delay = attempt == 0 ? 2.0 : 5.0;
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)),
+                           dispatch_get_main_queue(), ^{
+                [self submitCameraPhoneEventBody:body attempt:attempt + 1 completion:completion];
+            });
+            return;
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (error) {
+                if (completion) completion(NO, @"Focus did not receive this reminder.");
+                return;
+            }
+            if (http.statusCode < 200 || http.statusCode >= 300) {
+                if (completion) completion(NO, [NSString stringWithFormat:@"Camera event failed (%ld).", (long)http.statusCode]);
+                return;
+            }
+            NSDictionary *root = data.length ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+            NSDictionary *result = [root[@"data"] isKindOfClass:NSDictionary.class] ? root[@"data"] : nil;
+            if (!result) {
+                if (completion) completion(NO, @"Focus returned an unreadable camera response.");
+                return;
+            }
+            BOOL accepted = [result[@"accepted"] boolValue];
+            NSString *reason = [result[@"reason"] isKindOfClass:NSString.class] ? result[@"reason"] : @"";
+            NSString *message = nil;
+            if (!accepted) {
+                message = [reason isEqualToString:@"cooldown"]
+                    ? @"Server reminder cooldown is active."
+                    : @"No running focus session; nothing was sent.";
+            }
+            if (completion) completion(accepted, message);
         });
     }] resume];
 }

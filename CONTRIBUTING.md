@@ -8,7 +8,7 @@ Thank you for helping improve FocusWith. Keep changes small, explain the user-fa
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest -q
-./macos/FocusFloat/build.sh
+./macos/FocusFloat/test.sh
 ```
 
 Before opening a pull request:

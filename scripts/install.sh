@@ -32,7 +32,7 @@ fi
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python scripts/setup_env.py
-.venv/bin/python -c 'from app.database import Base, engine; import app.models; Base.metadata.create_all(engine)'
+.venv/bin/python -c 'from app.database import initialize_database; initialize_database()'
 chmod +x scripts/focus scripts/focus-mcp scripts/install.sh scripts/deploy_remote.sh
 
 ./scripts/focus doctor

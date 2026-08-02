@@ -5,12 +5,12 @@ from typing import Literal, Optional
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from .database import Base, SessionLocal, engine
+from .database import SessionLocal, initialize_database
 from .services.focus_tools import execute_focus_tool
 
 
 def _call(name: str, arguments: dict | None = None) -> dict:
-    Base.metadata.create_all(engine)
+    initialize_database()
     db = SessionLocal()
     try:
         result = execute_focus_tool(db, name, arguments)

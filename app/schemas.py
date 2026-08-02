@@ -76,6 +76,22 @@ class PhoneEventInput(BaseModel):
     occurred_at: Optional[datetime] = None
 
 
+class CameraPhoneEventInput(BaseModel):
+    """Privacy-minimal event emitted after local camera inference."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: str = Field(min_length=8, max_length=160, pattern=r"^[A-Za-z0-9._:-]+$")
+    duration_seconds: int = Field(ge=10, le=300)
+    detected_at: Optional[datetime] = None
+    source: str = Field(
+        default="camera_companion",
+        min_length=1,
+        max_length=40,
+        pattern=r"^[a-z0-9_-]+$",
+    )
+
+
 class NotificationActionInput(BaseModel):
     action: Literal["complete", "repeat", "break", "resume", "dismiss"]
 

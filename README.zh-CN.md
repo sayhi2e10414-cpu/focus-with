@@ -41,7 +41,7 @@ FocusWith 把模糊目标整理成方向、项目、任务和一次次专注。�
 - 可选的 OpenAI Responses、Anthropic 或 OpenAI-compatible 内置 AI 伙伴，兼容 DeepSeek、GLM 和本地接口。
 - 7 个带安全提示的 MCP 工具，可供 Claude Desktop/Code、Codex 等本地客户端使用。
 - 面向 Claude.ai 和兼容 ChatGPT 工作区的 OAuth Remote MCP，以及干净 VPS 的 HTTPS 自动部署。
-- 只需 Command Line Tools 的 macOS 原生悬浮计时器，不要求完整 Xcode。
+- macOS 原生悬浮计时器带可选的本地镜头陪伴，不要求完整 Xcode。
 - 本地安装脚本和 Docker Compose。
 
 ## 快速安装
@@ -92,6 +92,7 @@ FOCUS_AI_BASE_URL=https://provider.example/v1
 ## 可选集成
 
 - macOS 悬浮计时器：`./macos/FocusFloat/install.sh`
+- 镜头陪伴与跨平台事件协议：[docs/CAMERA_COMPANION.md](docs/CAMERA_COMPANION.md)
 - iPhone 快捷指令：[docs/IPHONE_SHORTCUTS.md](docs/IPHONE_SHORTCUTS.md)
 - Android 手机伴侣：[docs/ANDROID.md](docs/ANDROID.md)
 - Android 正式签名版下载：[GitHub Releases](https://github.com/sayhi2e10414-cpu/focus-with/releases)
@@ -124,6 +125,7 @@ docker compose up -d --build
 - 主 API 与手机事件使用不同的随机 Token。
 - `.env`、数据库、日志、生成 App 和运行数据都被 Git 忽略。
 - API／模型 Key 不会嵌入网页 JavaScript、文档、MCP 配置或 macOS App 包。
+- 摄像头画面始终留在伴侣 App 内；服务端只接受事件 ID、持续时间、时间戳和客户端来源，并拒绝图像衍生字段。
 - OAuth 配置不完整时，Remote MCP 无法启动。
 - Remote MCP 使用加盐密码哈希、严格回调白名单、PKCE、Scope 与 Audience 校验、轮换和撤销。
 - Access Token、Refresh Token、授权码、登录 Ticket 与 CSRF 值只以哈希形式保存。
@@ -136,7 +138,7 @@ docker compose up -d --build
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest -q
-./macos/FocusFloat/build.sh
+./macos/FocusFloat/test.sh
 ```
 
 服务运行时可在 `/docs` 查看 API。项目使用 [MIT License](LICENSE)，贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。

@@ -1,6 +1,7 @@
 #import <Cocoa/Cocoa.h>
 #import <Security/Security.h>
 #import "FocusAPIClient.h"
+#import "FocusCameraController.h"
 #import "FocusPanelController.h"
 
 static NSString *const FocusService = @"app.focusstandalone.FocusFloat";
@@ -28,18 +29,23 @@ static void SaveToken(NSString *token) {
     SecItemAdd((__bridge CFDictionaryRef)item, NULL);
 }
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, FocusAPIClientDelegate, FocusPanelControllerDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, FocusAPIClientDelegate, FocusCameraControllerDelegate, FocusPanelControllerDelegate>
 @property(nonatomic, strong) FocusAPIClient *apiClient;
+@property(nonatomic, strong) FocusCameraController *cameraController;
 @property(nonatomic, strong) FocusPanelController *panel;
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) NSTimer *displayTimer;
 @property(nonatomic, strong) NSURL *webURL;
+@property(nonatomic, assign) BOOL cameraRequestInFlight;
 @end
 
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     self.panel = [[FocusPanelController alloc] init]; self.panel.delegate = self; [self.panel showPanel:NO];
+    self.cameraController = [[FocusCameraController alloc] init];
+    self.cameraController.delegate = self;
+    [self.panel updateCameraRunning:NO message:nil];
     [self configureStatusItem];
     if (![self configureConnectionIfNeeded:NO]) { [NSApp terminate:nil]; return; }
     self.displayTimer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(updateTimer) userInfo:nil repeats:YES];
@@ -99,11 +105,79 @@ static void SaveToken(NSString *token) {
 - (void)focusPanelDidRequestPrimaryAction { [self.apiClient performAction:[self.apiClient.currentSession[@"status"] isEqual:@"paused"] ? @"resume" : @"pause" completion:nil]; }
 - (void)focusPanelDidRequestCompletion { [self.apiClient performAction:@"complete" completion:nil]; }
 - (void)focusPanelDidRequestOpenWeb { [self openWeb:nil]; }
+- (void)focusPanelDidRequestCameraToggle {
+    if (self.cameraRequestInFlight) return;
+    if (self.cameraController.isRunning) {
+        [self.cameraController stop];
+        [self.panel setCameraSession:nil];
+        [self.panel updateCameraRunning:NO message:@"Camera companion is off"];
+        return;
+    }
+    self.cameraRequestInFlight = YES;
+    [self.panel updateCameraRunning:NO message:@"Requesting camera permission…"];
+    [self.panel setCameraBusy:YES];
+    __weak typeof(self) weakSelf = self;
+    [self.cameraController startWithCompletion:^(BOOL success, NSString *errorMessage) {
+        typeof(self) self = weakSelf;
+        if (!self) return;
+        self.cameraRequestInFlight = NO;
+        [self.panel setCameraBusy:NO];
+        if (!success) {
+            [self.panel setCameraSession:nil];
+            [self.panel updateCameraRunning:NO message:errorMessage];
+            return;
+        }
+        [self.panel setCameraSession:self.cameraController.captureSession];
+        [self.panel updateCameraRunning:YES message:@"● Camera companion on · local only"];
+    }];
+}
+
+- (void)focusCameraController:(FocusCameraController *)controller
+       didUpdatePhonePresence:(BOOL)phonePresent
+                   confidence:(float)confidence
+                     evidence:(NSInteger)evidence
+            sustainedDuration:(NSTimeInterval)sustainedDuration
+       interventionTriggered:(BOOL)interventionTriggered
+     shouldReportIntervention:(BOOL)shouldReportIntervention
+                  boundingBox:(CGRect)boundingBox {
+    [self.panel updatePhonePresence:phonePresent
+                         confidence:confidence
+                           evidence:evidence
+                  sustainedDuration:sustainedDuration
+             interventionTriggered:interventionTriggered
+                        boundingBox:boundingBox];
+    if (!shouldReportIntervention) return;
+    if (![self.apiClient.currentSession[@"status"] isEqual:@"running"]) {
+        [self.panel updateCameraInterventionDelivery:@"Phone stayed visible · no running focus session"];
+        return;
+    }
+    [self.panel updateCameraInterventionDelivery:@"Phone stayed visible · sending reminder…"];
+    __weak typeof(self) weakSelf = self;
+    [self.apiClient reportCameraPhoneDistractionWithEventID:NSUUID.UUID.UUIDString.lowercaseString
+                                            durationSeconds:10
+                                                 detectedAt:NSDate.date
+                                                 completion:^(BOOL accepted, NSString *message) {
+        typeof(self) self = weakSelf;
+        if (!self) return;
+        [self.panel updateCameraInterventionDelivery:
+            accepted ? @"Phone stayed visible · reminder sent" : (message ?: @"Reminder was not sent")];
+    }];
+}
+
+- (void)focusCameraController:(FocusCameraController *)controller didUpdateDetectorStatus:(NSString *)status {
+    if (!controller.isRunning && !self.cameraRequestInFlight) return;
+    [self.panel updateCameraRunning:YES message:status];
+}
+
 - (void)showPanel:(id)sender { [self.panel showPanel:YES]; }
 - (void)openWeb:(id)sender { if (self.webURL) [NSWorkspace.sharedWorkspace openURL:self.webURL]; }
 - (void)reconfigure:(id)sender { [self configureConnectionIfNeeded:YES]; }
 - (void)quit:(id)sender { [NSApp terminate:nil]; }
-- (void)applicationWillTerminate:(NSNotification *)notification { [self.apiClient stopPolling]; [self.displayTimer invalidate]; }
+- (void)applicationWillTerminate:(NSNotification *)notification {
+    [self.cameraController stop];
+    [self.apiClient stopPolling];
+    [self.displayTimer invalidate];
+}
 @end
 
 id FocusCreateAppDelegate(void) { return [[AppDelegate alloc] init]; }

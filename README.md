@@ -41,7 +41,7 @@ The web interface automatically follows Chinese browsers and can be switched bet
 - Built-in companion using OpenAI Responses, Anthropic, or an OpenAI-compatible API, including compatible local endpoints.
 - Seven annotated MCP tools for Claude Desktop/Code, Codex, and other local clients.
 - Optional OAuth-protected Remote MCP for Claude.ai and compatible ChatGPT workspaces, with automated clean-VPS HTTPS deployment.
-- Native macOS floating timer built with Command Line Tools; full Xcode is not required.
+- Native macOS floating timer with an opt-in, local-only camera companion; full Xcode is not required.
 - Local installer and Docker Compose deployment.
 
 ## Fastest installation
@@ -92,6 +92,7 @@ To use an existing AI client, connect the private local server in [docs/MCP.md](
 ## Optional integrations
 
 - macOS floating timer: `./macos/FocusFloat/install.sh`
+- Camera companion and cross-platform event contract: [docs/CAMERA_COMPANION.md](docs/CAMERA_COMPANION.md)
 - iPhone Shortcuts: [docs/IPHONE_SHORTCUTS.md](docs/IPHONE_SHORTCUTS.md)
 - Android companion: [docs/ANDROID.md](docs/ANDROID.md)
 - Signed Android downloads: [GitHub Releases](https://github.com/sayhi2e10414-cpu/focus-with/releases)
@@ -124,6 +125,7 @@ The script refuses to replace an existing service on ports 80/443. See [docs/REM
 - Separate random tokens protect the main API and phone-event endpoint.
 - Runtime data, `.env`, logs, generated apps, and databases are ignored by Git.
 - API/provider tokens are not embedded in JavaScript, documentation, MCP configuration, or the macOS bundle.
+- Camera frames stay inside the companion app. The server accepts only an event ID, sustained duration, timestamp, and client source; image-derived fields are rejected.
 - Remote MCP cannot run with only half of its OAuth configuration.
 - Remote MCP uses a salted owner-password hash, strict callback allowlisting, PKCE, scoped audience-bound bearer tokens, rotation, and revocation.
 - OAuth bearer tokens, refresh tokens, authorization codes, login tickets, and CSRF artifacts are stored only as hashes.
@@ -136,7 +138,7 @@ Read [SECURITY.md](SECURITY.md) before exposing FocusWith outside localhost.
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest -q
-./macos/FocusFloat/build.sh
+./macos/FocusFloat/test.sh
 ```
 
 The server API is documented at `/docs` while it is running. Contributions are welcome under the [MIT License](LICENSE); see [CONTRIBUTING.md](CONTRIBUTING.md).

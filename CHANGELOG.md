@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added an opt-in macOS Camera Companion with local Vision/Core ML phone detection, temporal smoothing, and visible camera controls.
+- Added a privacy-minimal, idempotent camera-distraction endpoint shared by future Windows and other native companions.
+- Added a repeatable SQLite migration that preserves existing phone-app interventions while generalizing their source.
+
 ## 0.5.1 — 2026-07-19
 
 - Fixed the public Android release workflow to invoke `apksigner` from the installed Android build-tools directory.

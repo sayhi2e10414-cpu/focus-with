@@ -18,7 +18,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)stopPolling;
 - (void)refresh;
 - (void)performAction:(NSString *)action completion:(void (^_Nullable)(BOOL success, NSString *_Nullable message))completion;
+- (void)reportCameraPhoneDistractionWithEventID:(NSString *)eventID
+                               durationSeconds:(NSInteger)durationSeconds
+                                    detectedAt:(NSDate *)detectedAt
+                                    completion:(void (^)(BOOL accepted, NSString *_Nullable message))completion;
 + (NSString *)formattedDisplayForSession:(NSDictionary *)session atDate:(NSDate *)date;
++ (NSDictionary *)cameraPhoneEventPayloadWithEventID:(NSString *)eventID
+                                     durationSeconds:(NSInteger)durationSeconds
+                                          detectedAt:(NSDate *)detectedAt;
 @end
 
 NS_ASSUME_NONNULL_END

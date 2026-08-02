@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 from typing import Any, Optional
 
@@ -129,6 +130,7 @@ def serialize_intervention(item: models.Intervention) -> dict:
         "id": item.id,
         "session_id": item.session_id,
         "task_id": item.task_id,
+        "source_type": item.source_type,
         "app_name": item.app_name,
         "opened_at": item.opened_at.isoformat(),
         "closed_at": item.closed_at.isoformat() if item.closed_at else None,
@@ -542,6 +544,133 @@ def observe_distraction(db: Session, session: models.FocusSession, now: datetime
     )
     create_notification(db, event, kind="distraction", title=f"Focus reminder · {strike}", body=body)
     return True
+
+
+def record_camera_phone_distraction(
+    db: Session,
+    values: schemas.CameraPhoneEventInput,
+    now: Optional[datetime] = None,
+) -> dict:
+    """Turn a local phone-presence signal into a normal Focus notification.
+
+    The caller sends no image-derived data beyond the sustained duration. The
+    event ID is used only for idempotency.
+    """
+    now = now or utcnow()
+    source_event_key = hashlib.sha256(
+        f"{values.source}\0{values.event_id}".encode("utf-8")
+    ).hexdigest()
+    existing = (
+        db.query(models.Intervention)
+        .filter(
+            models.Intervention.source_type == "camera_phone",
+            models.Intervention.source_event_id == source_event_key,
+        )
+        .first()
+    )
+    if existing:
+        accepted = existing.sent_at is not None
+        return {
+            "accepted": accepted,
+            "reason": "duplicate",
+            "intervention_id": existing.id,
+            "strike": existing.strike_number or 0,
+        }
+
+    session = active_session(db)
+    if not session or session.status != "running" or session.session_kind == "break":
+        return {
+            "accepted": False,
+            "reason": "no_running_focus",
+            "intervention_id": None,
+            "strike": 0,
+        }
+
+    detected_at = values.detected_at
+    if detected_at and detected_at.tzinfo:
+        detected_at = detected_at.astimezone(timezone.utc).replace(tzinfo=None)
+    detected_at = detected_at or now
+    if abs((detected_at - now).total_seconds()) > 300:
+        detected_at = now
+    opened_at = detected_at - timedelta(seconds=values.duration_seconds)
+    task = db.get(models.Task, session.task_id) if session.task_id else None
+    policy = active_policy(db)
+    previous = (
+        db.query(models.Intervention)
+        .filter(
+            models.Intervention.session_id == session.id,
+            models.Intervention.sent_at.isnot(None),
+        )
+        .order_by(models.Intervention.strike_number.desc(), models.Intervention.id.desc())
+        .first()
+    )
+
+    item = models.Intervention(
+        session_id=session.id,
+        task_id=session.task_id,
+        phone_open_event_id=None,
+        source_type="camera_phone",
+        source_event_id=source_event_key,
+        app_name="Phone in camera",
+        opened_at=opened_at,
+        closed_at=detected_at,
+        duration_seconds=values.duration_seconds,
+        resolved_at=detected_at,
+    )
+    db.add(item)
+    db.flush()
+
+    cooldown = max(30, policy.reminder_cooldown_seconds or 300)
+    if previous and previous.sent_at and (now - previous.sent_at).total_seconds() < cooldown:
+        item.status = "suppressed_cooldown"
+        return {
+            "accepted": False,
+            "reason": "cooldown",
+            "intervention_id": item.id,
+            "strike": 0,
+        }
+
+    strike = (previous.strike_number if previous else 0) + 1
+    pool = json_value(policy.punishment_pool_json, [])
+    punishment = None
+    if strike >= max(1, policy.strikes_for_punishment or 3):
+        punishment = pool[(strike - policy.strikes_for_punishment) % len(pool)] if pool else "Review this distraction"
+    label = task_title(db, session)
+    body = (
+        f"A phone stayed in the camera frame for about {values.duration_seconds} seconds "
+        f"during {label}. If you are using it, put it down and return to the task."
+    )
+    item.strike_number = strike
+    item.status = "punishment_pending" if punishment else "sent"
+    item.message = body
+    item.punishment = punishment
+    item.sent_at = now
+    event = record_event(
+        db,
+        "distraction_punishment" if punishment else "distraction_warning",
+        session=session,
+        task=task,
+        dedupe_key=f"distraction:camera:{source_event_key}",
+        payload={
+            "source": "camera_phone",
+            "duration_seconds": values.duration_seconds,
+            "strike": strike,
+            "punishment": punishment,
+        },
+    )
+    create_notification(
+        db,
+        event,
+        kind="distraction",
+        title=f"Focus reminder · {strike}",
+        body=body,
+    )
+    return {
+        "accepted": True,
+        "reason": "notified",
+        "intervention_id": item.id,
+        "strike": strike,
+    }
 
 
 def build_stats(db: Session, now: Optional[datetime] = None) -> dict:

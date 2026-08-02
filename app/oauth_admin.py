@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 
 from . import models
-from .database import Base, SessionLocal, engine
+from .database import SessionLocal, initialize_database
 
 
 def main() -> None:
@@ -11,7 +11,7 @@ def main() -> None:
     parser.add_argument("command", choices=["status", "revoke-all"])
     args = parser.parse_args()
 
-    Base.metadata.create_all(engine)
+    initialize_database()
     db = SessionLocal()
     try:
         counts = {

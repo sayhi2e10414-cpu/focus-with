@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import PROJECT_ROOT, settings
-from .database import Base, engine
+from .database import initialize_database
 from .routes.api import router as api_router
 from .routes.phone import router as phone_router
 from .worker import stop_worker, worker_loop
@@ -29,7 +29,7 @@ if settings.remote_mcp_enabled:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    Base.metadata.create_all(engine)
+    initialize_database()
     if remote_mcp_server is not None:
         async with remote_mcp_server.session_manager.run():
             task = asyncio.create_task(worker_loop())

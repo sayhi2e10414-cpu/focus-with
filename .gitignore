@@ -13,6 +13,7 @@ generated/
 *.sqlite*
 .DS_Store
 macos/FocusFloat/.build/
+macos/FocusFloat/Models/*.mlmodel
 android/.gradle/
 android/local.properties
 android/**/build/

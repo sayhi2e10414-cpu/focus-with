@@ -14,6 +14,7 @@ from ..services.core import (
     apply_notification_action,
     build_stats,
     dump_list,
+    record_camera_phone_distraction,
     record_event,
     serialize_direction,
     serialize_intervention,
@@ -243,6 +244,16 @@ def update_policy(payload: schemas.PolicyInput, db: Session = Depends(get_db)):
     item.punishment_pool_json = dump_list(payload.punishment_pool)
     db.commit()
     return {"success": True, "data": serialize_policy(item)}
+
+
+@router.post("/vision-events/phone")
+def camera_phone_event(
+    payload: schemas.CameraPhoneEventInput,
+    db: Session = Depends(get_db),
+):
+    result = record_camera_phone_distraction(db, payload)
+    db.commit()
+    return {"success": True, "data": result}
 
 
 @router.get("/notifications")
