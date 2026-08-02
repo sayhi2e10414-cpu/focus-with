@@ -1,0 +1,29 @@
+name: Windows
+
+on:
+  push:
+    paths:
+      - "windows/**"
+      - ".github/workflows/windows.yml"
+  pull_request:
+    paths:
+      - "windows/**"
+      - ".github/workflows/windows.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Test and publish Windows companion
+        shell: pwsh
+        run: ./windows/FocusFloat/build.ps1 -Configuration Release -Runtime win-x64
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0 # v7.0.1
+        with:
+          name: FocusWith-Windows-win-x64
+          path: windows/FocusFloat/artifacts/FocusWith-Windows-win-x64.zip
+          if-no-files-found: error

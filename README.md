@@ -12,7 +12,7 @@
 
 FocusWith turns vague goals into directions, projects, tasks, and focused sessions. It keeps the core loop simple: choose one thing, start, return when distracted, finish, and decide what comes next.
 
-It works without Telegram and without an AI key. The core is a self-hosted web app; optional adapters add an AI companion, MCP connections, Telegram buttons, iPhone Shortcut events, an Android usage/timer companion, and a native macOS floating timer.
+It works without Telegram and without an AI key. The core is a self-hosted web app; optional adapters add an AI companion, MCP connections, Telegram buttons, iPhone Shortcut events, an Android usage/timer companion, and native floating timers for macOS and experimental Windows testing.
 
 The web interface automatically follows Chinese browsers and can be switched between Simplified Chinese and English at any time. The choice is stored only in that browser.
 
@@ -42,6 +42,7 @@ The web interface automatically follows Chinese browsers and can be switched bet
 - Seven annotated MCP tools for Claude Desktop/Code, Codex, and other local clients.
 - Optional OAuth-protected Remote MCP for Claude.ai and compatible ChatGPT workspaces, with automated clean-VPS HTTPS deployment.
 - Native macOS floating timer with an opt-in, local-only camera companion; full Xcode is not required.
+- Experimental Windows WinUI 3 floating timer with local ONNX phone detection; CI-built, pending physical camera validation.
 - Local installer and Docker Compose deployment.
 
 ## Fastest installation
@@ -92,6 +93,7 @@ To use an existing AI client, connect the private local server in [docs/MCP.md](
 ## Optional integrations
 
 - macOS floating timer: `./macos/FocusFloat/install.sh`
+- Windows floating timer preview: [windows/FocusFloat/README.md](windows/FocusFloat/README.md)
 - Camera companion and cross-platform event contract: [docs/CAMERA_COMPANION.md](docs/CAMERA_COMPANION.md)
 - iPhone Shortcuts: [docs/IPHONE_SHORTCUTS.md](docs/IPHONE_SHORTCUTS.md)
 - Android companion: [docs/ANDROID.md](docs/ANDROID.md)

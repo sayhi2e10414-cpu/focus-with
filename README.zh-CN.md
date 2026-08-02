@@ -12,7 +12,7 @@
 
 FocusWith 把模糊目标整理成方向、项目、任务和一次次专注。它关心的不只是倒计时，而是完整的一轮：选一件事、开始、分心后回来、完成，然后自然地进入下一步。
 
-它不依赖 Telegram，也不强制使用 AI。核心是一套可自托管的网页应用；你可以按需加入 AI 伙伴、MCP、Telegram 按钮、iPhone 快捷指令事件、Android 使用时长与悬浮计时，以及 macOS 原生悬浮计时器。
+它不依赖 Telegram，也不强制使用 AI。核心是一套可自托管的网页应用；你可以按需加入 AI 伙伴、MCP、Telegram 按钮、iPhone 快捷指令事件、Android 使用时长与悬浮计时，以及 macOS 原生和 Windows 实验版悬浮计时器。
 
 网页会在中文浏览器中自动显示简体中文，也可以随时切换为 English；选择只保存在当前浏览器中。
 
@@ -42,6 +42,7 @@ FocusWith 把模糊目标整理成方向、项目、任务和一次次专注。�
 - 7 个带安全提示的 MCP 工具，可供 Claude Desktop/Code、Codex 等本地客户端使用。
 - 面向 Claude.ai 和兼容 ChatGPT 工作区的 OAuth Remote MCP，以及干净 VPS 的 HTTPS 自动部署。
 - macOS 原生悬浮计时器带可选的本地镜头陪伴，不要求完整 Xcode。
+- Windows WinUI 3 实验版悬浮计时器带本地 ONNX 手机识别；已纳入 CI 编译，等待 Windows 实机摄像头验证。
 - 本地安装脚本和 Docker Compose。
 
 ## 快速安装
@@ -92,6 +93,7 @@ FOCUS_AI_BASE_URL=https://provider.example/v1
 ## 可选集成
 
 - macOS 悬浮计时器：`./macos/FocusFloat/install.sh`
+- Windows 悬浮计时器预览：[windows/FocusFloat/README.md](windows/FocusFloat/README.md)
 - 镜头陪伴与跨平台事件协议：[docs/CAMERA_COMPANION.md](docs/CAMERA_COMPANION.md)
 - iPhone 快捷指令：[docs/IPHONE_SHORTCUTS.md](docs/IPHONE_SHORTCUTS.md)
 - Android 手机伴侣：[docs/ANDROID.md](docs/ANDROID.md)

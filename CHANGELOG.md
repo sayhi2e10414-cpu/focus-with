@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added an experimental Windows WinUI 3 floating companion with local ONNX
+  phone detection, Windows Credential Locker storage, privacy-minimal event
+  reporting, portable tests, and a `windows-latest` build artifact.
+
 ## 0.6.0 — 2026-08-02
 
 - Added an opt-in macOS Camera Companion with local Vision/Core ML phone detection, temporal smoothing, and visible camera controls.

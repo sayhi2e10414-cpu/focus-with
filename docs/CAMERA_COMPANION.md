@@ -1,6 +1,6 @@
 # Camera Companion
 
-FocusWith supports opt-in camera companions that detect a phone locally and send only a small distraction event to the Focus server. The included macOS FocusFloat client is the reference implementation.
+FocusWith supports opt-in camera companions that detect a phone locally and send only a small distraction event to the Focus server. The included macOS FocusFloat client is the reference implementation, and an experimental Windows implementation is available for hardware testing.
 
 ## Privacy boundary
 
@@ -39,14 +39,15 @@ A successful response looks like:
 
 See [macos/FocusFloat/README.md](../macos/FocusFloat/README.md). The included client uses AVFoundation, Vision, and Core ML. Its model is downloaded from Apple's model assets during the first build and is not committed to this repository.
 
-## Windows adapter
+## Windows
 
-The server contract is already platform-neutral. No Windows executable is included yet; the native client remains a separate, test-on-Windows implementation. It should use:
+See [windows/FocusFloat/README.md](../windows/FocusFloat/README.md). The
+experimental WinUI 3 client uses `MediaFrameReader`, ONNX Runtime, a
+checksum-pinned YOLOv3 model, Windows Credential Locker, and the same temporal
+rules as the macOS client. Its contract test proves that Windows events contain
+exactly the four documented fields.
 
-- [`MediaCapture`](https://learn.microsoft.com/windows/apps/develop/camera/basic-photo-capture) or `MediaFrameReader` for visible, opt-in camera capture.
-- [Windows ML](https://learn.microsoft.com/windows/ai/new-windows-ml/overview) or [ONNX Runtime](https://onnxruntime.ai/docs/get-started/with-windows.html) for local object detection.
-- The same temporal rules as FocusFloat: two hits to confirm, four misses tolerated, ten sustained seconds, and a 60-second local cooldown.
-- Windows Credential Manager for the Focus API token.
-- A persistent camera-on indicator and one-click stop control.
-
-The ONNX model and preprocessing must be pinned by URL, license, version, and SHA-256 checksum. A Windows client must pass contract tests proving its JSON contains exactly the four documented properties before it is presented as supported. The server-side endpoint does not require a server upgrade when that client is added.
+The x64 source is compiled and tested by `windows-latest` CI, but real camera
+permission, selection, throughput, and detection accuracy have not yet been
+validated on physical Windows hardware. The server endpoint is already
+platform-neutral and does not require a server upgrade.

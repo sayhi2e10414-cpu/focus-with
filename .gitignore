@@ -14,6 +14,10 @@ generated/
 .DS_Store
 macos/FocusFloat/.build/
 macos/FocusFloat/Models/*.mlmodel
+windows/**/bin/
+windows/**/obj/
+windows/FocusFloat/Models/*.onnx
+windows/FocusFloat/artifacts/
 android/.gradle/
 android/local.properties
 android/**/build/

@@ -1,0 +1,72 @@
+<Window
+    x:Class="FocusFloat.Windows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:media="using:Microsoft.UI.Xaml.Controls">
+  <Grid Background="#17171D" Padding="20" RowSpacing="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <Grid Grid.Row="0">
+      <TextBlock Text="FOCUSWITH · WINDOWS" Foreground="#9999A5" FontSize="12" FontWeight="SemiBold" />
+      <TextBlock x:Name="CameraIndicator" Text="● CAMERA OFF" Foreground="#888894" FontSize="11"
+                 HorizontalAlignment="Right" />
+    </Grid>
+
+    <StackPanel Grid.Row="1" Spacing="2">
+      <TextBlock x:Name="SessionTitle" Text="No active focus" Foreground="White"
+                 FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+      <TextBlock x:Name="TimerText" Text="00:00" Foreground="White" FontSize="48"
+                 FontFamily="Consolas" FontWeight="SemiBold" />
+      <TextBlock x:Name="SessionStatus" Text="Connect to your FocusWith server."
+                 Foreground="#A8A8B2" FontSize="12" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border Grid.Row="2" Background="#0C0C10" CornerRadius="12" Height="160">
+      <media:MediaPlayerElement x:Name="CameraPreview"
+                                AreTransportControlsEnabled="False"
+                                Stretch="UniformToFill" />
+    </Border>
+
+    <TextBlock Grid.Row="3" x:Name="CameraStatus" Text="Camera companion is off."
+               Foreground="#8F8F9A" FontSize="12" TextWrapping="Wrap" />
+
+    <Grid Grid.Row="4" ColumnSpacing="8">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Button x:Name="PrimaryButton" Grid.Column="0" Content="Pause" Click="PrimaryButton_Click"
+              HorizontalAlignment="Stretch" IsEnabled="False" />
+      <Button x:Name="EndButton" Grid.Column="1" Content="End" Click="EndButton_Click"
+              HorizontalAlignment="Stretch" IsEnabled="False" />
+      <Button x:Name="CameraButton" Grid.Column="2" Content="Start camera" Click="CameraButton_Click"
+              HorizontalAlignment="Stretch" />
+    </Grid>
+
+    <StackPanel Grid.Row="5" x:Name="ConnectionPanel" Spacing="7">
+      <TextBox x:Name="ServerUrlBox" Header="FocusWith URL" PlaceholderText="http://127.0.0.1:8765/" />
+      <PasswordBox x:Name="TokenBox" Header="API token" PasswordRevealMode="Peek" />
+      <Grid ColumnSpacing="8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Button Grid.Column="0" x:Name="ConnectButton" Content="Connect and save"
+                Click="ConnectButton_Click" HorizontalAlignment="Stretch" />
+        <Button Grid.Column="1" Content="Open Focus" Click="OpenFocusButton_Click" />
+      </Grid>
+    </StackPanel>
+
+    <TextBlock Grid.Row="6" Text="Frames stay on this PC. Only event ID, duration, time, and client source can be sent."
+               Foreground="#71717D" FontSize="10" TextWrapping="Wrap" />
+  </Grid>
+</Window>
