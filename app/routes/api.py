@@ -30,6 +30,16 @@ from ..services.core import (
 from ..config import settings
 from ..services.companion import CompanionError, companion_reply
 from ..services.plan_import import parse_markdown_plan
+from ..services.rewards import (
+    archive_reward,
+    create_reward,
+    record_camera_heartbeat,
+    redeem_grant,
+    reward_overview,
+    select_reward,
+    serialize_reward,
+    update_reward,
+)
 
 
 router = APIRouter(prefix="/api", dependencies=[Depends(require_api_token)])
@@ -45,6 +55,7 @@ def must_get(db: Session, model, item_id: int, label: str):
 @router.get("/bootstrap")
 def bootstrap(db: Session = Depends(get_db)):
     now = utcnow()
+    rewards = reward_overview(db, now)
     directions = db.query(models.Direction).order_by(models.Direction.sort_order, models.Direction.id).all()
     projects = db.query(models.Project).order_by(models.Project.sort_order, models.Project.id).all()
     tasks = db.query(models.Task).order_by(
@@ -64,8 +75,8 @@ def bootstrap(db: Session = Depends(get_db)):
         .all()
     )
     policy = active_policy(db)
-    db.commit()
     current = active_session(db)
+    db.commit()
     return {
         "success": True,
         "data": {
@@ -78,6 +89,7 @@ def bootstrap(db: Session = Depends(get_db)):
             "notifications": [serialize_notification(row) for row in notifications],
             "policy": serialize_policy(policy),
             "stats": build_stats(db, now),
+            "rewards": rewards,
         },
     }
 
@@ -254,6 +266,70 @@ def camera_phone_event(
     result = record_camera_phone_distraction(db, payload)
     db.commit()
     return {"success": True, "data": result}
+
+
+@router.post("/vision-events/heartbeat")
+def camera_heartbeat(
+    payload: schemas.CameraHeartbeatInput,
+    db: Session = Depends(get_db),
+):
+    result = record_camera_heartbeat(db, payload)
+    db.commit()
+    return {"success": True, "data": result}
+
+
+@router.post("/rewards")
+def add_reward(payload: schemas.RewardInput, db: Session = Depends(get_db)):
+    item = create_reward(db, payload)
+    db.commit()
+    return {"success": True, "data": serialize_reward(item)}
+
+
+@router.put("/rewards/{item_id}")
+def edit_reward(
+    item_id: int,
+    payload: schemas.RewardInput,
+    db: Session = Depends(get_db),
+):
+    item = must_get(db, models.RewardDefinition, item_id, "Reward")
+    if not item.is_active:
+        raise HTTPException(status_code=404, detail="Reward not found")
+    update_reward(db, item, payload)
+    db.commit()
+    return {"success": True, "data": serialize_reward(item)}
+
+
+@router.post("/rewards/{item_id}/select")
+def choose_reward(item_id: int, db: Session = Depends(get_db)):
+    item = must_get(db, models.RewardDefinition, item_id, "Reward")
+    if not item.is_active:
+        raise HTTPException(status_code=404, detail="Reward not found")
+    progress_reset = select_reward(db, item)
+    data = reward_overview(db)
+    data["progress_reset"] = progress_reset
+    db.commit()
+    return {"success": True, "data": data}
+
+
+@router.delete("/rewards/{item_id}")
+def delete_reward(item_id: int, db: Session = Depends(get_db)):
+    item = must_get(db, models.RewardDefinition, item_id, "Reward")
+    archive_reward(db, item)
+    data = reward_overview(db)
+    db.commit()
+    return {"success": True, "data": data}
+
+
+@router.post("/reward-grants/{item_id}/redeem")
+def redeem_reward(item_id: int, db: Session = Depends(get_db)):
+    item = must_get(db, models.RewardGrant, item_id, "Reward grant")
+    try:
+        redeem_grant(db, item)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    data = reward_overview(db)
+    db.commit()
+    return {"success": True, "data": data}
 
 
 @router.get("/notifications")

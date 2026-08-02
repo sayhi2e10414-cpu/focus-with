@@ -20,6 +20,21 @@ public sealed class FocusApiClientTests
                   "success": true,
                   "data": {
                     "tasks": [{"id": 7, "title": "Write the Windows guide"}],
+                    "rewards": {
+                      "progress": {
+                        "session_id": 11,
+                        "segment_number": 2,
+                        "continuous_seconds": 300,
+                        "target_seconds": 1500,
+                        "evidence_mode": "camera_verified",
+                        "reward": {
+                          "id": 3,
+                          "title": "One episode",
+                          "focus_minutes": 25,
+                          "repeatable": false
+                        }
+                      }
+                    },
                     "active_session": {
                       "id": 11,
                       "task_id": 7,
@@ -42,6 +57,28 @@ public sealed class FocusApiClientTests
         Assert.NotNull(snapshot.ActiveSession);
         Assert.Equal("Write the Windows guide", snapshot.ActiveSession.Title);
         Assert.Equal(125, snapshot.ActiveSession.ElapsedSeconds);
+        Assert.NotNull(snapshot.RewardProgress);
+        Assert.Equal("One episode", snapshot.RewardProgress.Reward.Title);
+        Assert.Equal("camera_verified", snapshot.RewardProgress.EvidenceMode);
+    }
+
+    [Fact]
+    public async Task CameraHeartbeatContainsNoImageDerivedData()
+    {
+        var handler = new StubHandler(async (request, cancellationToken) =>
+        {
+            Assert.Equal("/api/vision-events/heartbeat", request.RequestUri?.AbsolutePath);
+            var json = await request.Content!.ReadAsStringAsync(cancellationToken);
+            using var document = JsonDocument.Parse(json);
+            Assert.Equal(
+                ["camera_state", "observed_at", "source"],
+                document.RootElement.EnumerateObject().Select(item => item.Name).Order().ToArray());
+            return JsonResponse("""{"success":true,"data":{"accepted":true}}""");
+        });
+        using var http = new HttpClient(handler);
+        using var api = new FocusApiClient(new Uri("https://focus.example/"), "test-token", http);
+
+        await api.ReportCameraHeartbeatAsync(observing: true);
     }
 
     [Fact]

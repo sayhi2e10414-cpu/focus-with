@@ -18,6 +18,14 @@ from .core import (
     update_session,
     utcnow,
 )
+from .rewards import (
+    create_reward as create_reward_definition,
+    redeem_grant,
+    reward_overview,
+    select_reward as select_reward_definition,
+    serialize_grant,
+    serialize_reward,
+)
 
 
 TOOL_SPECS: list[dict[str, Any]] = [
@@ -103,6 +111,44 @@ TOOL_SPECS: list[dict[str, Any]] = [
             "required": ["task_id"],
         },
     },
+    {
+        "name": "get_reward_status",
+        "description": "Read the selected reward target, uninterrupted-focus progress, reward catalog, and earned reward inventory.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "create_reward",
+        "description": "Create a custom reward that is earned after a chosen number of uninterrupted focus minutes.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "details": {"type": "string"},
+                "focus_minutes": {"type": "integer", "minimum": 5, "maximum": 1440},
+                "reward_minutes": {"type": ["integer", "null"], "minimum": 1, "maximum": 1440},
+                "repeatable": {"type": "boolean"},
+            },
+            "required": ["title", "focus_minutes"],
+        },
+    },
+    {
+        "name": "select_reward",
+        "description": "Select a reward target. Changing it during a focus session restarts only the current uninterrupted progress.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"reward_id": {"type": "integer"}},
+            "required": ["reward_id"],
+        },
+    },
+    {
+        "name": "redeem_reward",
+        "description": "Redeem one already-earned reward from the reward cabinet after the user confirms they want to enjoy it now.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"grant_id": {"type": "integer"}},
+            "required": ["grant_id"],
+        },
+    },
 ]
 
 
@@ -138,6 +184,7 @@ def focus_context(db: Session) -> dict[str, Any]:
         "projects": [serialize_project(item) for item in projects],
         "open_tasks": [serialize_task(item) for item in tasks],
         "stats": build_stats(db, now),
+        "rewards": reward_overview(db, now),
     }
 
 
@@ -221,6 +268,45 @@ def execute_focus_tool(db: Session, name: str, arguments: dict[str, Any] | None 
         item.completed_at = utcnow()
         db.flush()
         return serialize_task(item)
+
+    if name == "get_reward_status":
+        return reward_overview(db)
+
+    if name == "create_reward":
+        payload = schemas.RewardInput(
+            title=args.get("title", ""),
+            details=args.get("details") or None,
+            focus_minutes=args.get("focus_minutes", 25),
+            reward_minutes=args.get("reward_minutes"),
+            repeatable=args.get("repeatable", False),
+        )
+        item = create_reward_definition(db, payload)
+        db.flush()
+        return serialize_reward(item)
+
+    if name == "select_reward":
+        item = _must_get(
+            db,
+            models.RewardDefinition,
+            int(args.get("reward_id", 0)),
+            "Reward",
+        )
+        if not item.is_active:
+            raise ValueError("That reward is no longer active")
+        progress_reset = select_reward_definition(db, item)
+        db.flush()
+        return {"reward": serialize_reward(item), "progress_reset": progress_reset}
+
+    if name == "redeem_reward":
+        item = _must_get(
+            db,
+            models.RewardGrant,
+            int(args.get("grant_id", 0)),
+            "Reward grant",
+        )
+        redeem_grant(db, item)
+        db.flush()
+        return serialize_grant(item)
 
     raise ValueError(f"Unknown Focus tool: {name}")
 

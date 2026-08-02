@@ -28,6 +28,22 @@ public sealed record CameraEventResult(
     int? InterventionId,
     int Strike);
 
+public sealed record CameraHeartbeatRequest(
+    [property: JsonPropertyName("observed_at")] DateTimeOffset ObservedAt,
+    [property: JsonPropertyName("source")] string Source,
+    [property: JsonPropertyName("camera_state")] string CameraState)
+{
+    public static CameraHeartbeatRequest Create(
+        bool observing,
+        DateTimeOffset? observedAt = null) =>
+        new(
+            observedAt ?? DateTimeOffset.UtcNow,
+            "windows_focus_float",
+            observing ? "observing" : "stopped");
+
+    public string ToJson() => JsonSerializer.Serialize(this, FocusJson.Options);
+}
+
 internal static class FocusJson
 {
     public static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)

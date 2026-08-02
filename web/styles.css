@@ -36,7 +36,7 @@ button { cursor: pointer; }
 .ghost { background: transparent; color: var(--blue); padding-inline: 8px; }
 .icon-button { width: 42px; height: 42px; padding: 0; background: var(--surface-soft); color: var(--text); font-size: 20px; }
 .language-button { min-width: 42px; height: 42px; padding: 0 12px; background: transparent; color: var(--muted); }
-.segmented { width: fit-content; margin: 44px auto 30px; padding: 5px; display: grid; grid-template-columns: repeat(5, minmax(90px, 1fr)); gap: 3px; background: #e8e8ed; border-radius: 18px; }
+.segmented { width: fit-content; margin: 44px auto 30px; padding: 5px; display: grid; grid-template-columns: repeat(6, auto); gap: 3px; background: #e8e8ed; border-radius: 18px; }
 .segmented button { border: 0; background: transparent; color: var(--muted); border-radius: 14px; padding: 10px 20px; font-weight: 650; }
 .segmented button.active { background: white; color: var(--text); box-shadow: 0 1px 5px rgba(0,0,0,.09); }
 .loading, .empty { color: var(--muted); padding: 70px 20px; text-align: center; }
@@ -52,6 +52,17 @@ button { cursor: pointer; }
 .timer-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
 .timer-card:not(.idle) .secondary { background: #363638; color: white; }
 .monitor-note { margin-top: 34px; color: #9a9aa0; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.reward-inline { margin-top: 22px; padding: 14px 16px; border-radius: 16px; background: #28282b; }
+.empty-inline { color: var(--muted); font-size: 13px; }
+.reward-inline.empty-inline { color: #9a9aa0; }
+.reward-progress-card.empty-inline { padding: 18px; border-radius: 16px; background: var(--bg); }
+.reward-progress-copy { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: baseline; gap: 4px 12px; }
+.reward-progress-copy span { grid-column: 1 / -1; color: var(--muted); font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
+.reward-inline .reward-progress-copy span, .reward-inline .reward-progress-copy small { color: #9a9aa0; }
+.reward-progress-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reward-progress-copy small { color: var(--muted); white-space: nowrap; }
+.reward-meter { height: 6px; margin-top: 11px; overflow: hidden; border-radius: 999px; background: rgba(142,142,147,.24); }
+.reward-meter span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8c6cff, #ff6aa2); transition: width .3s ease; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(48,176,90,.14); }
 .task-card { padding: 34px 36px; }
 .section-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px; }
@@ -74,6 +85,34 @@ button { cursor: pointer; }
 .page-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px; }
 .page-card { padding: 30px; }
 .page-card h2, .page-card h3 { margin: 0; letter-spacing: -.025em; }
+.rewards-head p { margin: 10px 0 0; color: var(--muted); }
+.reward-hero { padding: 30px; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 20px; margin-bottom: 20px; }
+.reward-hero h2 { margin: 7px 0 0; font-size: 32px; letter-spacing: -.04em; }
+.reward-hero .reward-progress-card { grid-column: 1 / -1; }
+.reward-balance { min-width: 110px; text-align: right; }
+.reward-balance strong { display: block; font-size: 36px; letter-spacing: -.05em; }
+.reward-balance span { color: var(--muted); font-size: 12px; }
+.reward-market { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-bottom: 20px; }
+.reward-card { min-height: 265px; padding: 25px; border: 1px solid transparent; display: flex; flex-direction: column; }
+.reward-card.selected { border-color: rgba(140,108,255,.45); box-shadow: 0 14px 42px rgba(107,76,210,.12); }
+.reward-card-top, .reward-actions { display: flex; align-items: center; gap: 8px; }
+.reward-card-top { justify-content: space-between; }
+.reward-duration { color: #7355df; font-size: 13px; font-weight: 700; }
+.selected-chip { background: #eee9ff; color: #6544d3; }
+.reward-card h3 { margin: 22px 0 8px; font-size: 22px; letter-spacing: -.03em; }
+.reward-card p { margin: 0; color: var(--muted); line-height: 1.5; }
+.reward-meta { display: flex; flex-wrap: wrap; gap: 7px; margin: 18px 0; }
+.reward-meta span { padding: 5px 8px; border-radius: 9px; background: var(--bg); color: var(--muted); font-size: 11px; }
+.reward-actions { margin-top: auto; flex-wrap: wrap; }
+.danger-text { color: var(--red); }
+.reward-shelves { margin-top: 0; }
+.reward-grant { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.reward-grant:last-child { border-bottom: 0; }
+.reward-grant strong, .reward-grant span { display: block; }
+.reward-grant span { margin-top: 5px; color: var(--muted); font-size: 12px; }
+.reward-grant.redeemed { opacity: .62; }
+.check-field { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.check-field input { margin-top: 2px; }
 .project-card { min-height: 220px; display: flex; flex-direction: column; }
 .project-meta { color: var(--muted); margin-top: 10px; line-height: 1.5; }
 .project-card .progress { margin-top: auto; }
@@ -134,13 +173,15 @@ dialog form { padding: 30px; }
   .topbar p { display: none; }
   .topbar h1 { font-size: 52px; }
   .focus-grid, .page-grid { grid-template-columns: 1fr; }
-  .direction-strip { grid-template-columns: 1fr; }
+  .direction-strip, .reward-market { grid-template-columns: 1fr; }
   .timer-card { min-height: 430px; }
   .stat-hero { grid-column: auto; grid-template-columns: 1fr; }
-  .segmented { width: 100%; overflow-x: auto; grid-template-columns: repeat(5, minmax(90px,1fr)); }
+  .segmented { width: 100%; overflow-x: auto; grid-template-columns: repeat(6, minmax(90px,1fr)); }
 }
 
 @media (max-width: 560px) {
+  .topbar { display: block; }
+  .top-actions { margin-top: 18px; flex-wrap: wrap; }
   .top-actions .icon-button { display: none; }
   .primary { padding-inline: 14px; }
   .segmented button { padding-inline: 8px; font-size: 13px; }
@@ -150,5 +191,10 @@ dialog form { padding: 30px; }
   .task-tools { grid-column: 2; justify-content: flex-start; }
   .form-grid { grid-template-columns: 1fr; }
   .companion-card { min-height: 520px; }
+  .reward-hero { grid-template-columns: 1fr; }
+  .rewards-head { display: block; }
+  .rewards-head .primary { margin-top: 16px; }
+  .reward-balance { text-align: left; }
+  .reward-hero .reward-progress-card { grid-column: auto; }
   .chat-message { width: 90%; }
 }

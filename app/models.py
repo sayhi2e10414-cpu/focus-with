@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -178,6 +178,80 @@ class Notification(Base):
     delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     read_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
+class RewardDefinition(Base):
+    __tablename__ = "reward_definitions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(200))
+    details: Mapped[Optional[str]] = mapped_column(Text)
+    focus_minutes: Mapped[int] = mapped_column(Integer, default=25)
+    reward_minutes: Mapped[Optional[int]] = mapped_column(Integer)
+    repeatable: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    template_key: Mapped[Optional[str]] = mapped_column(String(80), unique=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class RewardSettings(Base):
+    __tablename__ = "reward_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True, default=1)
+    selected_reward_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("reward_definitions.id"),
+        index=True,
+    )
+    defaults_seeded: Mapped[bool] = mapped_column(Boolean, default=False)
+    camera_heartbeat_timeout_seconds: Mapped[int] = mapped_column(Integer, default=75)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class RewardProgress(Base):
+    __tablename__ = "reward_progress"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("focus_sessions.id"), unique=True, index=True)
+    reward_id: Mapped[Optional[int]] = mapped_column(ForeignKey("reward_definitions.id"), index=True)
+    segment_number: Mapped[int] = mapped_column(Integer, default=1)
+    continuous_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    last_accounted_at: Mapped[datetime] = mapped_column(DateTime)
+    last_camera_heartbeat_at: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True)
+    camera_source: Mapped[Optional[str]] = mapped_column(String(40))
+    last_interruption_key: Mapped[Optional[str]] = mapped_column(String(160))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class RewardGrant(Base):
+    __tablename__ = "reward_grants"
+    __table_args__ = (
+        UniqueConstraint(
+            "reward_id",
+            "session_id",
+            "segment_number",
+            "cycle_number",
+            name="uq_reward_grant_cycle",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    reward_id: Mapped[Optional[int]] = mapped_column(ForeignKey("reward_definitions.id"), index=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("focus_sessions.id"), index=True)
+    segment_number: Mapped[int] = mapped_column(Integer)
+    cycle_number: Mapped[int] = mapped_column(Integer, default=1)
+    title_snapshot: Mapped[str] = mapped_column(String(200))
+    details_snapshot: Mapped[Optional[str]] = mapped_column(Text)
+    focus_minutes: Mapped[int] = mapped_column(Integer)
+    reward_minutes: Mapped[Optional[int]] = mapped_column(Integer)
+    evidence_mode: Mapped[str] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(24), default="available", index=True)
+    earned_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    redeemed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class OAuthClient(Base):

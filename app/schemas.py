@@ -92,6 +92,31 @@ class CameraPhoneEventInput(BaseModel):
     )
 
 
+class CameraHeartbeatInput(BaseModel):
+    """Privacy-minimal proof that local camera inference is still running."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    observed_at: Optional[datetime] = None
+    source: str = Field(
+        min_length=1,
+        max_length=40,
+        pattern=r"^[a-z0-9_-]+$",
+    )
+    camera_state: Literal["observing", "stopped"] = "observing"
+
+
+class RewardInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=200)
+    details: Optional[str] = Field(default=None, max_length=2000)
+    focus_minutes: int = Field(ge=5, le=1440)
+    reward_minutes: Optional[int] = Field(default=None, ge=1, le=1440)
+    repeatable: bool = False
+    sort_order: int = Field(default=0, ge=-10000, le=10000)
+
+
 class NotificationActionInput(BaseModel):
     action: Literal["complete", "repeat", "break", "resume", "dismiss"]
 

@@ -35,6 +35,8 @@ static void SaveToken(NSString *token) {
 @property(nonatomic, strong) FocusPanelController *panel;
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) NSTimer *displayTimer;
+@property(nonatomic, strong, nullable) NSTimer *cameraHeartbeatTimer;
+@property(nonatomic, strong, nullable) NSDate *lastCameraHeartbeatAt;
 @property(nonatomic, strong) NSURL *webURL;
 @property(nonatomic, assign) BOOL cameraRequestInFlight;
 @end
@@ -95,12 +97,22 @@ static void SaveToken(NSString *token) {
 
 - (void)updateTimer {
     NSDictionary *session = self.apiClient.currentSession;
-    if (!session) { self.statusItem.button.title = @"◉"; return; }
+    if (!session) {
+        self.statusItem.button.title = @"◉";
+        [self.panel updateRewardProgress:nil session:nil atDate:NSDate.date];
+        return;
+    }
     NSString *value = [FocusAPIClient formattedDisplayForSession:session atDate:NSDate.date];
-    [self.panel updateTimer:value]; self.statusItem.button.title = [NSString stringWithFormat:@"◉ %@", value];
+    [self.panel updateTimer:value];
+    [self.panel updateRewardProgress:self.apiClient.currentRewardProgress session:session atDate:NSDate.date];
+    self.statusItem.button.title = [NSString stringWithFormat:@"◉ %@", value];
 }
 
-- (void)focusAPIClient:(FocusAPIClient *)client didUpdateSession:(NSDictionary *)session title:(NSString *)title { [self.panel updateWithSession:session title:title message:nil]; [self updateTimer]; }
+- (void)focusAPIClient:(FocusAPIClient *)client didUpdateSession:(NSDictionary *)session title:(NSString *)title {
+    [self.panel updateWithSession:session title:title message:nil];
+    [self updateTimer];
+    [self sendCameraHeartbeatIfNeeded];
+}
 - (void)focusAPIClient:(FocusAPIClient *)client didFailWithMessage:(NSString *)message { [self.panel updateWithSession:client.currentSession title:client.currentTitle message:message]; }
 - (void)focusPanelDidRequestPrimaryAction { [self.apiClient performAction:[self.apiClient.currentSession[@"status"] isEqual:@"paused"] ? @"resume" : @"pause" completion:nil]; }
 - (void)focusPanelDidRequestCompletion { [self.apiClient performAction:@"complete" completion:nil]; }
@@ -108,6 +120,7 @@ static void SaveToken(NSString *token) {
 - (void)focusPanelDidRequestCameraToggle {
     if (self.cameraRequestInFlight) return;
     if (self.cameraController.isRunning) {
+        [self stopCameraHeartbeat];
         [self.cameraController stop];
         [self.panel setCameraSession:nil];
         [self.panel updateCameraRunning:NO message:@"Camera companion is off"];
@@ -129,7 +142,38 @@ static void SaveToken(NSString *token) {
         }
         [self.panel setCameraSession:self.cameraController.captureSession];
         [self.panel updateCameraRunning:YES message:@"● Camera companion on · local only"];
+        [self startCameraHeartbeat];
     }];
+}
+
+- (void)startCameraHeartbeat {
+    [self.cameraHeartbeatTimer invalidate];
+    self.cameraHeartbeatTimer = [NSTimer scheduledTimerWithTimeInterval:30
+                                                                 target:self
+                                                               selector:@selector(sendCameraHeartbeatIfNeeded)
+                                                               userInfo:nil
+                                                                repeats:YES];
+    [self sendCameraHeartbeatIfNeeded];
+}
+
+- (void)sendCameraHeartbeatIfNeeded {
+    NSDictionary *session = self.apiClient.currentSession;
+    if (!self.cameraController.isRunning
+        || ![session[@"status"] isEqual:@"running"]
+        || [session[@"session_kind"] isEqual:@"break"]) return;
+    NSDate *now = NSDate.date;
+    if (self.lastCameraHeartbeatAt && [now timeIntervalSinceDate:self.lastCameraHeartbeatAt] < 25) return;
+    self.lastCameraHeartbeatAt = now;
+    [self.apiClient reportCameraHeartbeatState:@"observing" observedAt:now];
+}
+
+- (void)stopCameraHeartbeat {
+    [self.cameraHeartbeatTimer invalidate];
+    self.cameraHeartbeatTimer = nil;
+    if (self.lastCameraHeartbeatAt) {
+        [self.apiClient reportCameraHeartbeatState:@"stopped" observedAt:NSDate.date];
+    }
+    self.lastCameraHeartbeatAt = nil;
 }
 
 - (void)focusCameraController:(FocusCameraController *)controller
@@ -174,6 +218,7 @@ static void SaveToken(NSString *token) {
 - (void)reconfigure:(id)sender { [self configureConnectionIfNeeded:YES]; }
 - (void)quit:(id)sender { [NSApp terminate:nil]; }
 - (void)applicationWillTerminate:(NSNotification *)notification {
+    [self stopCameraHeartbeat];
     [self.cameraController stop];
     [self.apiClient stopPolling];
     [self.displayTimer invalidate];

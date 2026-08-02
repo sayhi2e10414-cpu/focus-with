@@ -13,9 +13,12 @@ public sealed partial class MainWindow : Window
     private readonly CameraCaptureController _camera = new();
     private readonly DispatcherTimer _pollTimer = new() { Interval = TimeSpan.FromSeconds(4) };
     private readonly DispatcherTimer _displayTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly DispatcherTimer _heartbeatTimer = new() { Interval = TimeSpan.FromSeconds(30) };
     private FocusApiClient? _api;
     private FocusSessionSnapshot? _session;
+    private RewardProgressSnapshot? _rewardProgress;
     private DateTimeOffset _snapshotReceivedAt;
+    private DateTimeOffset? _lastHeartbeatAt;
     private Uri? _serverUri;
 
     public MainWindow()
@@ -28,6 +31,7 @@ public sealed partial class MainWindow : Window
         _camera.PhonePresenceChanged += Camera_PhonePresenceChanged;
         _pollTimer.Tick += async (_, _) => await RefreshSnapshotAsync();
         _displayTimer.Tick += (_, _) => UpdateTimer();
+        _heartbeatTimer.Tick += async (_, _) => await SendCameraHeartbeatIfNeededAsync();
         _displayTimer.Start();
         Closed += MainWindow_Closed;
         _ = RestoreConnectionAsync();
@@ -109,12 +113,14 @@ public sealed partial class MainWindow : Window
         {
             var snapshot = await _api.GetSnapshotAsync();
             _session = snapshot.ActiveSession;
+            _rewardProgress = snapshot.RewardProgress;
             _snapshotReceivedAt = DateTimeOffset.UtcNow;
             SessionTitle.Text = _session?.Title ?? "No active focus";
             PrimaryButton.IsEnabled = _session is not null;
             EndButton.IsEnabled = _session is not null;
             PrimaryButton.Content = _session?.Status == "paused" ? "Resume" : "Pause";
             UpdateTimer();
+            await SendCameraHeartbeatIfNeededAsync();
         }
         catch (Exception error)
         {
@@ -140,6 +146,35 @@ public sealed partial class MainWindow : Window
         TimerText.Text = seconds >= 3600
             ? $"{seconds / 3600}:{(seconds % 3600) / 60:00}:{seconds % 60:00}"
             : $"{seconds / 60:00}:{seconds % 60:00}";
+        UpdateRewardProgress();
+    }
+
+    private void UpdateRewardProgress()
+    {
+        if (_rewardProgress is null)
+        {
+            RewardStatus.Text = "Choose a reward in Focus.";
+            return;
+        }
+        var continuous = _rewardProgress.ContinuousSeconds;
+        if (_session?.Status == "running")
+        {
+            continuous += Math.Max(0, (int)(DateTimeOffset.UtcNow - _snapshotReceivedAt).TotalSeconds);
+        }
+        if (_rewardProgress.Reward.Repeatable && _rewardProgress.TargetSeconds > 0)
+        {
+            continuous %= _rewardProgress.TargetSeconds;
+        }
+        var remaining = Math.Max(0, _rewardProgress.TargetSeconds - continuous);
+        var mode = _rewardProgress.EvidenceMode switch
+        {
+            "camera_verified" => "camera verified",
+            "timer_guarded" => "timer + blocklist",
+            _ => "timer only",
+        };
+        RewardStatus.Text = remaining > 0
+            ? $"🎁 {_rewardProgress.Reward.Title} in {remaining / 60}:{remaining % 60:00} · {mode}"
+            : $"🎁 {_rewardProgress.Reward.Title} unlocked · {mode}";
     }
 
     private async void PrimaryButton_Click(object sender, RoutedEventArgs e)
@@ -193,6 +228,7 @@ public sealed partial class MainWindow : Window
         {
             if (_camera.IsRunning)
             {
+                await StopCameraHeartbeatAsync();
                 await _camera.StopAsync();
                 CameraButton.Content = "Start camera";
                 CameraIndicator.Text = "● CAMERA OFF";
@@ -205,6 +241,8 @@ public sealed partial class MainWindow : Window
             CameraButton.Content = "Stop camera";
             CameraIndicator.Text = "● CAMERA ON";
             CameraIndicator.Foreground = new SolidColorBrush(Microsoft.UI.Colors.LimeGreen);
+            _heartbeatTimer.Start();
+            await SendCameraHeartbeatIfNeededAsync(force: true);
         }
         catch (Exception error)
         {
@@ -215,6 +253,49 @@ public sealed partial class MainWindow : Window
         {
             CameraButton.IsEnabled = true;
         }
+    }
+
+    private async Task SendCameraHeartbeatIfNeededAsync(bool force = false)
+    {
+        if (_api is null ||
+            !_camera.IsRunning ||
+            _session?.Status != "running" ||
+            _session.SessionKind == "break")
+        {
+            return;
+        }
+        if (!force &&
+            _lastHeartbeatAt is not null &&
+            DateTimeOffset.UtcNow - _lastHeartbeatAt.Value < TimeSpan.FromSeconds(25))
+        {
+            return;
+        }
+        try
+        {
+            await _api.ReportCameraHeartbeatAsync(observing: true);
+            _lastHeartbeatAt = DateTimeOffset.UtcNow;
+        }
+        catch (Exception error)
+        {
+            CameraStatus.Text = $"Camera evidence heartbeat failed: {error.Message}";
+        }
+    }
+
+    private async Task StopCameraHeartbeatAsync()
+    {
+        _heartbeatTimer.Stop();
+        if (_api is not null && _lastHeartbeatAt is not null)
+        {
+            try
+            {
+                await _api.ReportCameraHeartbeatAsync(observing: false);
+            }
+            catch
+            {
+                // The server falls back automatically when heartbeats expire.
+            }
+        }
+        _lastHeartbeatAt = null;
     }
 
     private void Camera_StatusChanged(object? sender, string message)
@@ -273,7 +354,8 @@ public sealed partial class MainWindow : Window
     {
         _pollTimer.Stop();
         _displayTimer.Stop();
-        _api?.Dispose();
+        await StopCameraHeartbeatAsync();
         await _camera.DisposeAsync();
+        _api?.Dispose();
     }
 }

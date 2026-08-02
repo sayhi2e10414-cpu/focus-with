@@ -16,6 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)showPanel:(BOOL)activate;
 - (void)updateWithSession:(nullable NSDictionary *)session title:(nullable NSString *)title message:(nullable NSString *)message;
 - (void)updateTimer:(NSString *)text;
+- (void)updateRewardProgress:(nullable NSDictionary *)progress
+                     session:(nullable NSDictionary *)session
+                      atDate:(NSDate *)date;
 - (void)setCameraSession:(nullable AVCaptureSession *)session;
 - (void)updateCameraRunning:(BOOL)running message:(nullable NSString *)message;
 - (void)updateCameraInterventionDelivery:(NSString *)message;

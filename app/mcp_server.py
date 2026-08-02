@@ -148,6 +148,58 @@ def create_focus_mcp(**kwargs) -> FastMCP:
         """Mark a task complete after the user says it is done."""
         return _call("complete_task", {"task_id": task_id})
 
+    @server.tool(annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    ))
+    def get_reward_status() -> dict:
+        """Read uninterrupted-focus progress, reward targets, and earned rewards."""
+        return _call("get_reward_status")
+
+    @server.tool(annotations=ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=False,
+    ))
+    def create_reward(
+        title: str,
+        focus_minutes: int,
+        details: str = "",
+        reward_minutes: Optional[int] = None,
+        repeatable: bool = False,
+    ) -> dict:
+        """Create a reward for a custom uninterrupted-focus duration."""
+        return _call("create_reward", {
+            "title": title,
+            "details": details,
+            "focus_minutes": focus_minutes,
+            "reward_minutes": reward_minutes,
+            "repeatable": repeatable,
+        })
+
+    @server.tool(annotations=ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=True,
+        idempotentHint=False,
+        openWorldHint=False,
+    ))
+    def select_reward(reward_id: int) -> dict:
+        """Select a reward target; this restarts the current uninterrupted run."""
+        return _call("select_reward", {"reward_id": reward_id})
+
+    @server.tool(annotations=ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=True,
+        idempotentHint=False,
+        openWorldHint=False,
+    ))
+    def redeem_reward(grant_id: int) -> dict:
+        """Redeem an earned reward after the user confirms they want it now."""
+        return _call("redeem_reward", {"grant_id": grant_id})
+
     return server
 
 

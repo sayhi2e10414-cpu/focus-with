@@ -87,6 +87,17 @@ def initialize_database(bind: Engine = engine) -> None:
 
     _migrate_interventions(bind)
     Base.metadata.create_all(bind)
+    seed_session = sessionmaker(bind=bind, expire_on_commit=False)()
+    try:
+        from .services.rewards import ensure_reward_defaults
+
+        ensure_reward_defaults(seed_session)
+        seed_session.commit()
+    except Exception:
+        seed_session.rollback()
+        raise
+    finally:
+        seed_session.close()
 
 
 def get_db():

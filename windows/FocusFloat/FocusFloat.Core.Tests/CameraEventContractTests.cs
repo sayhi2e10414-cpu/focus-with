@@ -20,4 +20,18 @@ public sealed class CameraEventContractTests
             names);
         Assert.Equal("windows_focus_float", document.RootElement.GetProperty("source").GetString());
     }
+
+    [Fact]
+    public void HeartbeatContainsOnlyStateTimeAndSource()
+    {
+        var request = CameraHeartbeatRequest.Create(
+            observing: true,
+            DateTimeOffset.Parse("2026-08-02T10:00:00Z"));
+        using var document = JsonDocument.Parse(request.ToJson());
+        var names = document.RootElement.EnumerateObject().Select(item => item.Name).Order().ToArray();
+
+        Assert.Equal(["camera_state", "observed_at", "source"], names);
+        Assert.Equal("observing", document.RootElement.GetProperty("camera_state").GetString());
+        Assert.Equal("windows_focus_float", document.RootElement.GetProperty("source").GetString());
+    }
 }

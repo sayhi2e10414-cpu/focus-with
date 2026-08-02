@@ -26,6 +26,7 @@ static NSTextField *Label(CGFloat size, NSFontWeight weight, NSColor *color) {
 @property(nonatomic, strong) NSTextField *titleLabel;
 @property(nonatomic, strong) NSTextField *timerLabel;
 @property(nonatomic, strong) NSTextField *statusLabel;
+@property(nonatomic, strong) NSTextField *rewardLabel;
 @property(nonatomic, strong) NSTextField *cameraStatusLabel;
 @property(nonatomic, strong) NSView *cameraPreviewView;
 @property(nonatomic, strong, nullable) AVCaptureVideoPreviewLayer *cameraPreviewLayer;
@@ -41,7 +42,7 @@ static NSTextField *Label(CGFloat size, NSFontWeight weight, NSColor *color) {
 @implementation FocusPanelController
 
 - (instancetype)init {
-    FocusPanel *panel = [[FocusPanel alloc] initWithContentRect:NSMakeRect(0, 0, 380, 250) styleMask:NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel backing:NSBackingStoreBuffered defer:NO];
+    FocusPanel *panel = [[FocusPanel alloc] initWithContentRect:NSMakeRect(0, 0, 380, 276) styleMask:NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel backing:NSBackingStoreBuffered defer:NO];
     if ((self = [super initWithWindow:panel])) {
         panel.backgroundColor = NSColor.clearColor; panel.opaque = NO; panel.hasShadow = YES;
         panel.level = NSFloatingWindowLevel; panel.floatingPanel = YES; panel.hidesOnDeactivate = NO;
@@ -54,6 +55,8 @@ static NSTextField *Label(CGFloat size, NSFontWeight weight, NSColor *color) {
         self.timerLabel = Label(54, NSFontWeightMedium, NSColor.whiteColor);
         self.timerLabel.font = [NSFont monospacedDigitSystemFontOfSize:54 weight:NSFontWeightMedium];
         self.statusLabel = Label(12, NSFontWeightRegular, [NSColor colorWithWhite:.60 alpha:1]);
+        self.rewardLabel = Label(11, NSFontWeightSemibold, [NSColor colorWithSRGBRed:.68 green:.56 blue:1 alpha:1]);
+        self.rewardLabel.stringValue = @"Choose a reward in Focus";
         self.cameraStatusLabel = Label(11, NSFontWeightSemibold, [NSColor colorWithWhite:.52 alpha:1]);
         self.cameraStatusLabel.stringValue = @"Camera companion is off";
         self.cameraPreviewView = [[NSView alloc] initWithFrame:NSZeroRect];
@@ -66,16 +69,17 @@ static NSTextField *Label(CGFloat size, NSFontWeight weight, NSColor *color) {
         self.openButton = [NSButton buttonWithTitle:@"Open Focus" target:self action:@selector(open:)];
         self.cameraButton = [NSButton buttonWithTitle:@"Start camera" target:self action:@selector(camera:)];
         for (NSButton *button in @[self.primaryButton, self.completeButton, self.openButton, self.cameraButton]) { button.bezelStyle = NSBezelStyleRounded; button.controlSize = NSControlSizeLarge; }
-        for (NSView *view in @[self.cameraPreviewView, self.eyebrow, self.titleLabel, self.timerLabel, self.statusLabel, self.cameraStatusLabel, self.primaryButton, self.completeButton, self.openButton, self.cameraButton]) [card addSubview:view];
-        self.eyebrow.frame = NSMakeRect(22, 224, 180, 16); self.titleLabel.frame = NSMakeRect(22, 196, 336, 25);
-        self.timerLabel.frame = NSMakeRect(20, 108, 340, 66); self.statusLabel.frame = NSMakeRect(22, 91, 336, 18);
+        for (NSView *view in @[self.cameraPreviewView, self.eyebrow, self.titleLabel, self.timerLabel, self.statusLabel, self.rewardLabel, self.cameraStatusLabel, self.primaryButton, self.completeButton, self.openButton, self.cameraButton]) [card addSubview:view];
+        self.eyebrow.frame = NSMakeRect(22, 250, 180, 16); self.titleLabel.frame = NSMakeRect(22, 222, 336, 25);
+        self.timerLabel.frame = NSMakeRect(20, 134, 340, 66); self.statusLabel.frame = NSMakeRect(22, 117, 336, 18);
+        self.rewardLabel.frame = NSMakeRect(22, 91, 336, 18);
         self.cameraStatusLabel.frame = NSMakeRect(22, 67, 336, 18);
         self.primaryButton.frame = NSMakeRect(20, 18, 104, 36); self.completeButton.frame = NSMakeRect(132, 18, 124, 36); self.openButton.frame = NSMakeRect(20, 18, 112, 36);
         self.cameraButton.frame = NSMakeRect(266, 18, 94, 36);
-        self.cameraPreviewView.frame = NSMakeRect(252, 112, 108, 68);
+        self.cameraPreviewView.frame = NSMakeRect(252, 138, 108, 68);
         self.cameraPreviewView.hidden = YES;
         NSScreen *screen = NSScreen.mainScreen; NSRect visible = screen.visibleFrame;
-        panel.frameOrigin = NSMakePoint(NSMaxX(visible) - 404, NSMaxY(visible) - 274);
+        panel.frameOrigin = NSMakePoint(NSMaxX(visible) - 404, NSMaxY(visible) - 300);
         [self updateWithSession:nil title:nil message:nil];
     }
     return self;
@@ -95,6 +99,29 @@ static NSTextField *Label(CGFloat size, NSFontWeight weight, NSColor *color) {
 }
 
 - (void)updateTimer:(NSString *)text { self.timerLabel.stringValue = text ?: @"00:00"; }
+
+- (void)updateRewardProgress:(NSDictionary *)progress session:(NSDictionary *)session atDate:(NSDate *)date {
+    NSDictionary *reward = [progress[@"reward"] isKindOfClass:NSDictionary.class] ? progress[@"reward"] : nil;
+    if (!reward) {
+        self.rewardLabel.stringValue = @"Choose a reward in Focus";
+        return;
+    }
+    double continuous = [progress[@"continuous_seconds"] doubleValue];
+    NSNumber *receivedAt = progress[@"_received_at"];
+    if ([session[@"status"] isEqual:@"running"] && receivedAt) {
+        continuous += MAX(0, date.timeIntervalSince1970 - receivedAt.doubleValue);
+    }
+    double target = [progress[@"target_seconds"] doubleValue];
+    if ([reward[@"repeatable"] boolValue] && target > 0) continuous = fmod(continuous, target);
+    NSInteger remaining = (NSInteger)MAX(0, floor(target - continuous));
+    NSString *mode = [progress[@"evidence_mode"] isEqual:@"camera_verified"]
+        ? @"camera verified"
+        : ([progress[@"evidence_mode"] isEqual:@"timer_guarded"] ? @"timer + blocklist" : @"timer only");
+    NSString *title = [reward[@"title"] isKindOfClass:NSString.class] ? reward[@"title"] : @"Reward";
+    self.rewardLabel.stringValue = remaining > 0
+        ? [NSString stringWithFormat:@"🎁 %@ in %ld:%02ld · %@", title, (long)(remaining / 60), (long)(remaining % 60), mode]
+        : [NSString stringWithFormat:@"🎁 %@ unlocked · %@", title, mode];
+}
 
 - (void)setCameraSession:(AVCaptureSession *)session {
     [self.cameraPreviewLayer removeFromSuperlayer];
@@ -120,7 +147,7 @@ static NSTextField *Label(CGFloat size, NSFontWeight weight, NSColor *color) {
     self.cameraRunning = running;
     self.cameraButton.title = running ? @"Stop camera" : @"Start camera";
     self.cameraPreviewView.hidden = !running;
-    self.timerLabel.frame = NSMakeRect(20, 108, running ? 220 : 340, 66);
+    self.timerLabel.frame = NSMakeRect(20, 134, running ? 220 : 340, 66);
     self.cameraStatusLabel.stringValue = message.length ? message : (running ? @"● Camera companion on" : @"Camera companion is off");
     self.cameraStatusLabel.textColor = running
         ? [NSColor colorWithSRGBRed:.36 green:.86 blue:.58 alpha:1]

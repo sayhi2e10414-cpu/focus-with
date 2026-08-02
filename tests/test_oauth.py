@@ -176,9 +176,11 @@ def test_remote_oauth_and_mcp_flow():
                 )
                 assert listed.status_code == 200, listed.text
                 tools = {item["name"]: item for item in listed.json()["result"]["tools"]}
-                assert len(tools) == 7
+                assert len(tools) == 11
                 assert tools["get_focus_context"]["annotations"]["readOnlyHint"] is True
                 assert tools["complete_task"]["annotations"]["destructiveHint"] is True
+                assert tools["get_reward_status"]["annotations"]["readOnlyHint"] is True
+                assert tools["redeem_reward"]["annotations"]["destructiveHint"] is True
 
                 refreshed = await client.post(
                     "/token",

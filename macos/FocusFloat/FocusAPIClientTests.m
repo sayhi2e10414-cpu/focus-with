@@ -18,6 +18,12 @@ int main(void) {
         FocusAssert([event[@"source"] isEqualToString:@"macos_focus_float"], @"source is explicit");
         FocusAssert(event[@"detected_at"] != nil, @"timestamp is included");
         FocusAssert(event.count == 4, @"payload contains no image, box, or confidence");
+        NSDictionary *heartbeat = [FocusAPIClient cameraHeartbeatPayloadWithState:@"observing"
+                                                                        observedAt:now];
+        FocusAssert([heartbeat[@"camera_state"] isEqualToString:@"observing"], @"camera state is explicit");
+        FocusAssert([heartbeat[@"source"] isEqualToString:@"macos_focus_float"], @"heartbeat source is explicit");
+        FocusAssert(heartbeat[@"observed_at"] != nil, @"heartbeat timestamp is included");
+        FocusAssert(heartbeat.count == 3, @"heartbeat contains no image-derived data");
         NSLog(@"FocusAPIClientTests passed");
     }
     return 0;

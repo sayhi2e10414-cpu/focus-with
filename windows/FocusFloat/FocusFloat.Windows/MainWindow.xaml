@@ -35,8 +35,12 @@
                                 Stretch="UniformToFill" />
     </Border>
 
-    <TextBlock Grid.Row="3" x:Name="CameraStatus" Text="Camera companion is off."
-               Foreground="#8F8F9A" FontSize="12" TextWrapping="Wrap" />
+    <StackPanel Grid.Row="3" Spacing="4">
+      <TextBlock x:Name="RewardStatus" Text="Choose a reward in Focus."
+                 Foreground="#B89CFF" FontSize="12" TextWrapping="Wrap" />
+      <TextBlock x:Name="CameraStatus" Text="Camera companion is off."
+                 Foreground="#8F8F9A" FontSize="12" TextWrapping="Wrap" />
+    </StackPanel>
 
     <Grid Grid.Row="4" ColumnSpacing="8">
       <Grid.ColumnDefinitions>

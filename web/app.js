@@ -4,6 +4,7 @@ const state = {
   data: null,
   meta: null,
   clock: null,
+  rewardClock: null,
   seenNotifications: new Set(),
   companionMessages: [],
   companionBusy: false,
@@ -80,6 +81,78 @@ function syncClock() {
     return;
   }
   if (!state.clock || state.clock.sessionId !== session.id) state.clock = {sessionId: session.id, seconds: Number(session.elapsed_seconds || 0)};
+  const progress = state.data?.rewards?.progress;
+  if (!progress) {
+    state.rewardClock = null;
+  } else if (
+    !state.rewardClock ||
+    state.rewardClock.sessionId !== progress.session_id ||
+    state.rewardClock.segmentNumber !== progress.segment_number
+  ) {
+    state.rewardClock = {
+      sessionId: progress.session_id,
+      segmentNumber: progress.segment_number,
+      seconds: Number(progress.continuous_seconds || 0),
+    };
+  } else {
+    state.rewardClock.seconds = Math.max(state.rewardClock.seconds, Number(progress.continuous_seconds || 0));
+  }
+}
+
+function rewardTitle(reward) {
+  if (!reward) return t("No reward selected");
+  return reward.template_key === "free_break_10" ? t("10-minute free break") : reward.title;
+}
+
+function rewardDetails(reward) {
+  if (!reward) return "";
+  return reward.template_key === "free_break_10"
+    ? t("A guilt-free ten-minute break after one uninterrupted focus block.")
+    : (reward.details || "");
+}
+
+function evidenceLabel(mode) {
+  return t({
+    camera_verified: "Camera verified",
+    timer_guarded: "Timer + blocklist",
+    timer_only: "Timer only",
+  }[mode] || "Waiting for focus");
+}
+
+function currentRewardSeconds(progress) {
+  if (!progress) return 0;
+  const total = state.rewardClock?.sessionId === progress.session_id
+    ? state.rewardClock.seconds
+    : Number(progress.continuous_seconds || 0);
+  return progress.reward?.repeatable && progress.target_seconds
+    ? total % progress.target_seconds
+    : total;
+}
+
+function renderRewardProgress(compact = false) {
+  const progress = state.data?.rewards?.progress;
+  if (!progress?.reward) {
+    const selected = state.data?.rewards?.catalog?.find(
+      item => item.id === state.data?.rewards?.selected_reward_id,
+    );
+    const message = selected
+      ? t("Start a focus session to work toward {{reward}}.", {reward: rewardTitle(selected)})
+      : t("Choose a reward target to begin.");
+    return `<div class="${compact ? "reward-inline" : "reward-progress-card"} empty-inline">${esc(message)}</div>`;
+  }
+  const seconds = currentRewardSeconds(progress);
+  const remaining = Math.max(0, Number(progress.target_seconds || 0) - seconds);
+  const percent = progress.target_seconds
+    ? Math.min(100, Math.round(seconds / progress.target_seconds * 100))
+    : 0;
+  return `<div class="${compact ? "reward-inline" : "reward-progress-card"}">
+    <div class="reward-progress-copy">
+      <span>${esc(evidenceLabel(progress.evidence_mode))}</span>
+      <strong>${esc(rewardTitle(progress.reward))}</strong>
+      <small id="${compact ? "timerRewardRemaining" : "rewardRemaining"}">${remaining > 0 ? t("{{time}} until reward", {time: fmtClock(remaining)}) : t("Reward unlocked")}</small>
+    </div>
+    <div class="reward-meter"><span id="${compact ? "timerRewardMeter" : "rewardMeter"}" style="width:${percent}%"></span></div>
+  </div>`;
 }
 
 function projectName(projectId) {
@@ -112,12 +185,63 @@ function renderTimer() {
       <p class="timer-goal">${esc(task?.details || projectName(session.project_id))}</p>
       <div class="timer-value" id="timerValue">${timerValue(session)}</div>
       <div class="timer-state">${session.status === "paused" ? t("Take a breath, then decide.") : focusValueLabel(session.mode)}</div>
+      ${renderRewardProgress(true)}
       <div class="timer-actions">
         <button class="primary" data-session-action="${session.status === "paused" ? "resume" : "pause"}">${session.status === "paused" ? t("Resume") : t("Pause")}</button>
         <button class="secondary" data-session-action="complete">${t("End session")}</button>
       </div>
       <div class="monitor-note"><span class="dot"></span>${esc(policyApps.join(", ") || t("No apps monitored"))} · ${t("one strike per distinct open")}</div>
     </section>`;
+}
+
+function renderRewards() {
+  const rewards = state.data.rewards || {catalog:[], grants:[], available_count:0};
+  const selectedReward = rewards.catalog.find(item => item.id === rewards.selected_reward_id);
+  const available = rewards.grants.filter(item => item.status === "available");
+  const redeemed = rewards.grants.filter(item => item.status === "redeemed").slice(0, 8);
+  const cards = rewards.catalog.map(reward => {
+    const selected = reward.id === rewards.selected_reward_id;
+    return `<section class="card reward-card ${selected ? "selected" : ""}">
+      <div class="reward-card-top">
+        <span class="reward-duration">${t("{{count}} min focus", {count: reward.focus_minutes})}</span>
+        ${selected ? `<span class="chip selected-chip">${t("Current target")}</span>` : ""}
+      </div>
+      <h3>${esc(rewardTitle(reward))}</h3>
+      <p>${esc(rewardDetails(reward) || t("A reward you chose for yourself."))}</p>
+      <div class="reward-meta">
+        <span>${reward.reward_minutes ? t("{{count}} min reward", {count: reward.reward_minutes}) : t("No time limit")}</span>
+        <span>${reward.repeatable ? t("Repeatable in one focus block") : t("Once per focus block")}</span>
+        <span>${t("{{count}} available", {count: reward.available_count || 0})}</span>
+      </div>
+      <div class="reward-actions">
+        ${selected ? "" : `<button class="primary" data-select-reward="${reward.id}">${t("Set target")}</button>`}
+        <button class="secondary" data-edit-reward="${reward.id}">${t("Edit")}</button>
+        <button class="ghost danger-text" data-delete-reward="${reward.id}">${t("Delete")}</button>
+      </div>
+    </section>`;
+  }).join("");
+  const grantRows = available.map(grant => `<div class="reward-grant">
+    <div><strong>${esc(grant.title)}</strong><span>${esc(evidenceLabel(grant.evidence_mode))} · ${t("Earned after {{count}} min", {count: grant.focus_minutes})}</span></div>
+    <button class="primary" data-redeem-grant="${grant.id}">${t("Redeem")}</button>
+  </div>`).join("");
+  const historyRows = redeemed.map(grant => `<div class="reward-grant redeemed">
+    <div><strong>${esc(grant.title)}</strong><span>${t("Redeemed")} · ${esc(new Date(`${grant.redeemed_at}Z`).toLocaleString(focusLocale))}</span></div>
+  </div>`).join("");
+  return `<div class="section-head rewards-head"><div><div class="eyebrow">${t("Uninterrupted focus")}</div><h2>${t("Reward market")}</h2><p>${t("Camera evidence is preferred; timer and blocklist modes remain available.")}</p></div><button class="primary" data-action="new-reward">${t("＋ New reward")}</button></div>
+    <section class="card reward-hero">
+      <div><div class="eyebrow">${t("Current run")}</div><h2>${rewards.progress?.reward ? esc(rewardTitle(rewards.progress.reward)) : selectedReward ? esc(rewardTitle(selectedReward)) : t("Choose your next reward")}</h2></div>
+      <div class="reward-balance"><strong>${rewards.available_count || 0}</strong><span>${t("rewards ready")}</span></div>
+      ${renderRewardProgress()}
+    </section>
+    <div class="reward-market">${cards || `<section class="card empty">${t("Create a reward worth focusing for.")}</section>`}</div>
+    <div class="page-grid reward-shelves">
+      <section class="card page-card"><div class="section-head"><div><div class="eyebrow">${t("Reward cabinet")}</div><h2>${t("Ready to enjoy")}</h2></div></div>
+        <div class="reward-grants">${grantRows || `<div class="empty">${t("No rewards earned yet.")}</div>`}</div>
+      </section>
+      <section class="card page-card"><div class="section-head"><div><div class="eyebrow">${t("History")}</div><h2>${t("Redeemed rewards")}</h2></div></div>
+        <div class="reward-grants">${historyRows || `<div class="empty">${t("Nothing redeemed yet.")}</div>`}</div>
+      </section>
+    </div>`;
 }
 
 function renderTaskRow(task) {
@@ -229,7 +353,7 @@ function renderCompanion() {
 function render() {
   if (!state.data) return;
   syncClock();
-  app.innerHTML = state.tab === "focus" ? renderFocus() : state.tab === "projects" ? renderProjects() : state.tab === "companion" ? renderCompanion() : state.tab === "stats" ? renderStats() : renderSettings();
+  app.innerHTML = state.tab === "focus" ? renderFocus() : state.tab === "projects" ? renderProjects() : state.tab === "rewards" ? renderRewards() : state.tab === "companion" ? renderCompanion() : state.tab === "stats" ? renderStats() : renderSettings();
   if (state.tab === "companion") requestAnimationFrame(() => { const thread = document.querySelector("#chatThread"); if (thread) thread.scrollTop = thread.scrollHeight; });
 }
 
@@ -315,6 +439,35 @@ function freeFocusModal() {
   openModal({title:t("Start free focus"),eyebrow:t("Timer"),submit:t("Start"),body:`${field(t("Title"),"title",t("Free focus"),"text","required autofocus")}${field(t("Minutes"),"minutes",25,"number","min=1 max=1440")}`,onSubmit:form=>api("/api/sessions",{method:"POST",body:JSON.stringify({task_id:null,project_id:null,session_kind:"work",mode:"pomodoro",title:form.title.trim(),goal:null,planned_minutes:Number(form.minutes||25)})})});
 }
 
+function rewardModal(reward = null) {
+  openModal({
+    title: reward ? t("Edit reward") : t("New reward"),
+    eyebrow: t("Reward market"),
+    submit: reward ? t("Save reward") : t("Create reward"),
+    body: `${field(t("Reward name"), "title", reward ? rewardTitle(reward) : "", "text", "required autofocus maxlength=200")}
+      <label class="field"><span>${t("Description")}</span><textarea name="details" rows="3" maxlength="2000">${esc(reward ? rewardDetails(reward) : "")}</textarea></label>
+      <div class="form-grid">
+        ${field(t("Required uninterrupted focus minutes"), "focus_minutes", reward?.focus_minutes || 25, "number", "min=5 max=1440 required")}
+        ${field(t("Reward duration · optional"), "reward_minutes", reward?.reward_minutes || "", "number", "min=1 max=1440")}
+      </div>
+      <label class="check-field"><input name="repeatable" type="checkbox" ${reward?.repeatable ? "checked" : ""}><span>${t("Allow this reward to repeat in one uninterrupted focus block")}</span></label>`,
+    onSubmit: form => api(
+      reward ? `/api/rewards/${reward.id}` : "/api/rewards",
+      {
+        method: reward ? "PUT" : "POST",
+        body: JSON.stringify({
+          title: form.title.trim(),
+          details: form.details.trim() || null,
+          focus_minutes: Number(form.focus_minutes),
+          reward_minutes: form.reward_minutes ? Number(form.reward_minutes) : null,
+          repeatable: Boolean(form.repeatable),
+          sort_order: reward?.sort_order || 0,
+        }),
+      },
+    ),
+  });
+}
+
 async function enableNotifications() {
   if (!("Notification" in window)) return showToast(t("This browser does not support notifications."));
   const result = await Notification.requestPermission();
@@ -347,7 +500,30 @@ document.addEventListener("click", async event => {
   if (action === "retry") return refresh();
   if (action === "change-token") return tokenModal();
   if (action === "free-focus") return freeFocusModal();
+  if (action === "new-reward") return rewardModal();
   if (action === "switch-locale") return toggleFocusLocale();
+  const editRewardId = event.target.closest("[data-edit-reward]")?.dataset.editReward;
+  if (editRewardId) return rewardModal(state.data.rewards.catalog.find(item => item.id === Number(editRewardId)));
+  const selectRewardId = event.target.closest("[data-select-reward]")?.dataset.selectReward;
+  if (selectRewardId) {
+    const result = await api(`/api/rewards/${selectRewardId}/select`, {method:"POST"});
+    showToast(t(result.data.progress_reset ? "New target selected. The current uninterrupted run restarted." : "Reward target selected."));
+    return refresh();
+  }
+  const deleteRewardId = event.target.closest("[data-delete-reward]")?.dataset.deleteReward;
+  if (deleteRewardId) {
+    if (!confirm(t("Delete this reward? Earned copies will stay in your reward cabinet."))) return;
+    await api(`/api/rewards/${deleteRewardId}`, {method:"DELETE"});
+    showToast(t("Reward deleted."));
+    return refresh();
+  }
+  const redeemGrantId = event.target.closest("[data-redeem-grant]")?.dataset.redeemGrant;
+  if (redeemGrantId) {
+    if (!confirm(t("Enjoy this reward now?"))) return;
+    await api(`/api/reward-grants/${redeemGrantId}/redeem`, {method:"POST"});
+    showToast(t("Reward redeemed. Enjoy it."));
+    return refresh();
+  }
   const editId = event.target.closest("[data-edit-task]")?.dataset.editTask;
   if (editId) return taskModal(state.data.tasks.find(item => item.id === Number(editId)));
   const startId = event.target.closest("[data-start-task]")?.dataset.startTask;
@@ -411,8 +587,23 @@ setInterval(() => {
   if (!session || session.status !== "running") return;
   syncClock();
   state.clock.seconds += 1;
+  if (state.rewardClock) state.rewardClock.seconds += 1;
   const element = document.querySelector("#timerValue");
   if (element) element.textContent = timerValue(session);
+  const progress = state.data?.rewards?.progress;
+  if (progress?.reward) {
+    const seconds = currentRewardSeconds(progress);
+    const remaining = Math.max(0, Number(progress.target_seconds || 0) - seconds);
+    const percent = progress.target_seconds ? Math.min(100, Math.round(seconds / progress.target_seconds * 100)) : 0;
+    for (const id of ["timerRewardRemaining", "rewardRemaining"]) {
+      const label = document.querySelector(`#${id}`);
+      if (label) label.textContent = remaining > 0 ? t("{{time}} until reward", {time: fmtClock(remaining)}) : t("Reward unlocked");
+    }
+    for (const id of ["timerRewardMeter", "rewardMeter"]) {
+      const meter = document.querySelector(`#${id}`);
+      if (meter) meter.style.width = `${percent}%`;
+    }
+  }
 }, 1000);
 setInterval(() => refresh({quiet:true}), 10000);
 

@@ -7,6 +7,7 @@ import logging
 from .database import SessionLocal
 from .services.core import active_session, finish_due_timer, observe_distraction, utcnow
 from .services.delivery import deliver_pending_telegram, poll_telegram_callbacks
+from .services.rewards import process_reward_progress
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,8 @@ async def worker_loop(interval_seconds: int = 10):
             now = utcnow()
             session = active_session(db)
             if session and session.status == "running":
+                if session.session_kind != "break":
+                    process_reward_progress(db, session, now)
                 if not finish_due_timer(db, session, now):
                     observe_distraction(db, session, now)
             db.commit()

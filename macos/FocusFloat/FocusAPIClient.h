@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, weak, nullable) id<FocusAPIClientDelegate> delegate;
 @property(nonatomic, copy, readonly, nullable) NSDictionary *currentSession;
 @property(nonatomic, copy, readonly, nullable) NSString *currentTitle;
+@property(nonatomic, copy, readonly, nullable) NSDictionary *currentRewardProgress;
 - (instancetype)initWithBaseURL:(NSURL *)baseURL token:(NSString *)token;
 - (void)startPolling;
 - (void)stopPolling;
@@ -22,10 +23,12 @@ NS_ASSUME_NONNULL_BEGIN
                                durationSeconds:(NSInteger)durationSeconds
                                     detectedAt:(NSDate *)detectedAt
                                     completion:(void (^)(BOOL accepted, NSString *_Nullable message))completion;
+- (void)reportCameraHeartbeatState:(NSString *)state observedAt:(NSDate *)observedAt;
 + (NSString *)formattedDisplayForSession:(NSDictionary *)session atDate:(NSDate *)date;
 + (NSDictionary *)cameraPhoneEventPayloadWithEventID:(NSString *)eventID
                                      durationSeconds:(NSInteger)durationSeconds
                                           detectedAt:(NSDate *)detectedAt;
++ (NSDictionary *)cameraHeartbeatPayloadWithState:(NSString *)state observedAt:(NSDate *)observedAt;
 @end
 
 NS_ASSUME_NONNULL_END

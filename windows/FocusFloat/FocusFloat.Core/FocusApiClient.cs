@@ -12,7 +12,23 @@ public sealed record FocusSessionSnapshot(
     int ElapsedSeconds,
     int? PlannedMinutes);
 
-public sealed record FocusSnapshot(FocusSessionSnapshot? ActiveSession);
+public sealed record RewardTargetSnapshot(
+    int Id,
+    string Title,
+    int FocusMinutes,
+    bool Repeatable);
+
+public sealed record RewardProgressSnapshot(
+    int SessionId,
+    int SegmentNumber,
+    int ContinuousSeconds,
+    int TargetSeconds,
+    string EvidenceMode,
+    RewardTargetSnapshot Reward);
+
+public sealed record FocusSnapshot(
+    FocusSessionSnapshot? ActiveSession,
+    RewardProgressSnapshot? RewardProgress);
 
 public sealed class FocusApiClient : IDisposable
 {
@@ -40,9 +56,10 @@ public sealed class FocusApiClient : IDisposable
         response.EnsureSuccessStatusCode();
         using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken));
         var data = document.RootElement.GetProperty("data");
+        var rewardProgress = ReadRewardProgress(data);
         if (data.GetProperty("active_session").ValueKind == JsonValueKind.Null)
         {
-            return new FocusSnapshot(null);
+            return new FocusSnapshot(null, rewardProgress);
         }
 
         var session = data.GetProperty("active_session");
@@ -68,7 +85,8 @@ public sealed class FocusApiClient : IDisposable
             session.GetProperty("elapsed_seconds").GetInt32(),
             session.TryGetProperty("planned_minutes", out var planned) && planned.ValueKind == JsonValueKind.Number
                 ? planned.GetInt32()
-                : null));
+                : null),
+            rewardProgress);
     }
 
     public async Task ChangeSessionAsync(int sessionId, string action, CancellationToken cancellationToken = default)
@@ -121,6 +139,18 @@ public sealed class FocusApiClient : IDisposable
         }
     }
 
+    public async Task ReportCameraHeartbeatAsync(
+        bool observing,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await _http.PostAsJsonAsync(
+            "api/vision-events/heartbeat",
+            CameraHeartbeatRequest.Create(observing),
+            FocusJson.Options,
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     public void Dispose()
     {
         if (_ownsClient)
@@ -143,4 +173,27 @@ public sealed class FocusApiClient : IDisposable
         element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
+
+    private static RewardProgressSnapshot? ReadRewardProgress(JsonElement data)
+    {
+        if (!data.TryGetProperty("rewards", out var rewards) ||
+            !rewards.TryGetProperty("progress", out var progress) ||
+            progress.ValueKind != JsonValueKind.Object ||
+            !progress.TryGetProperty("reward", out var reward) ||
+            reward.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+        return new RewardProgressSnapshot(
+            progress.GetProperty("session_id").GetInt32(),
+            progress.GetProperty("segment_number").GetInt32(),
+            progress.GetProperty("continuous_seconds").GetInt32(),
+            progress.GetProperty("target_seconds").GetInt32(),
+            ReadString(progress, "evidence_mode") ?? "timer_only",
+            new RewardTargetSnapshot(
+                reward.GetProperty("id").GetInt32(),
+                ReadString(reward, "title") ?? "Reward",
+                reward.GetProperty("focus_minutes").GetInt32(),
+                reward.TryGetProperty("repeatable", out var repeatable) && repeatable.GetBoolean()));
+    }
 }

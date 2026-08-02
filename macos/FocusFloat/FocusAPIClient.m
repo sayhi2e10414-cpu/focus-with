@@ -18,6 +18,7 @@ static NSString *FocusISO8601FromDate(NSDate *date) {
 @property(nonatomic, assign) BOOL requestInFlight;
 @property(nonatomic, copy, readwrite, nullable) NSDictionary *currentSession;
 @property(nonatomic, copy, readwrite, nullable) NSString *currentTitle;
+@property(nonatomic, copy, readwrite, nullable) NSDictionary *currentRewardProgress;
 - (void)submitCameraPhoneEventBody:(NSData *)body
                            attempt:(NSInteger)attempt
                         completion:(void (^)(BOOL accepted, NSString *_Nullable message))completion;
@@ -85,8 +86,13 @@ static NSString *FocusISO8601FromDate(NSDate *date) {
                 if (taskID && [task[@"id"] isEqual:taskID]) { title = task[@"title"]; break; }
             }
             if (!title.length) title = session[@"title"] ?: session[@"goal"];
+            NSDictionary *rewards = [payload[@"rewards"] isKindOfClass:NSDictionary.class] ? payload[@"rewards"] : nil;
+            NSDictionary *rawProgress = [rewards[@"progress"] isKindOfClass:NSDictionary.class] ? rewards[@"progress"] : nil;
+            NSMutableDictionary *rewardProgress = rawProgress ? [rawProgress mutableCopy] : nil;
+            if (rewardProgress) rewardProgress[@"_received_at"] = @(NSDate.date.timeIntervalSince1970);
             self.currentSession = session;
             self.currentTitle = title;
+            self.currentRewardProgress = rewardProgress;
             [self.delegate focusAPIClient:self didUpdateSession:session title:title];
         });
     }] resume];
@@ -122,6 +128,24 @@ static NSString *FocusISO8601FromDate(NSDate *date) {
         @"detected_at": FocusISO8601FromDate(detectedAt),
         @"source": @"macos_focus_float",
     };
+}
+
++ (NSDictionary *)cameraHeartbeatPayloadWithState:(NSString *)state observedAt:(NSDate *)observedAt {
+    return @{
+        @"observed_at": FocusISO8601FromDate(observedAt),
+        @"source": @"macos_focus_float",
+        @"camera_state": [state isEqualToString:@"stopped"] ? @"stopped" : @"observing",
+    };
+}
+
+- (void)reportCameraHeartbeatState:(NSString *)state observedAt:(NSDate *)observedAt {
+    NSDictionary *payload = [FocusAPIClient cameraHeartbeatPayloadWithState:state observedAt:observedAt];
+    NSData *body = [NSJSONSerialization dataWithJSONObject:payload options:0 error:nil];
+    if (!body) return;
+    NSMutableURLRequest *request = [self requestForPath:@"api/vision-events/heartbeat" method:@"POST"];
+    request.HTTPBody = body;
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [[self.urlSession dataTaskWithRequest:request] resume];
 }
 
 - (void)reportCameraPhoneDistractionWithEventID:(NSString *)eventID

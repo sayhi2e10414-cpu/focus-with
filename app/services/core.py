@@ -281,6 +281,9 @@ def pause_current_session(db: Session, now: datetime) -> None:
     current = active_session(db)
     if not current or current.status != "running":
         return
+    from .rewards import freeze_reward_progress
+
+    freeze_reward_progress(db, current, now)
     current.elapsed_seconds = session_elapsed(current, now)
     current.last_resumed_at = None
     current.status = "paused"
@@ -306,6 +309,10 @@ def start_session(db: Session, values) -> models.FocusSession:
     )
     db.add(item)
     db.flush()
+    if item.session_kind != "break":
+        from .rewards import ensure_reward_progress
+
+        ensure_reward_progress(db, item, now)
     if task and task.status == "todo":
         task.status = "doing"
     record_event(
@@ -322,6 +329,10 @@ def update_session(db: Session, item: models.FocusSession, action: str, note: Op
     now = utcnow()
     task = db.get(models.Task, item.task_id) if item.task_id else None
     if action == "pause" and item.status == "running":
+        if item.session_kind != "break":
+            from .rewards import freeze_reward_progress
+
+            freeze_reward_progress(db, item, now)
         item.elapsed_seconds = session_elapsed(item, now)
         item.last_resumed_at = None
         item.status = "paused"
@@ -329,8 +340,16 @@ def update_session(db: Session, item: models.FocusSession, action: str, note: Op
     elif action == "resume" and item.status == "paused":
         item.last_resumed_at = now
         item.status = "running"
+        if item.session_kind != "break":
+            from .rewards import resume_reward_progress
+
+            resume_reward_progress(db, item, now)
         record_event(db, "session_resumed", session=item, task=task)
     elif action in {"complete", "cancel"} and item.status in {"running", "paused"}:
+        if item.session_kind != "break" and item.status == "running":
+            from .rewards import freeze_reward_progress
+
+            freeze_reward_progress(db, item, now)
         item.elapsed_seconds = session_elapsed(item, now)
         item.last_resumed_at = None
         item.ended_at = now
@@ -358,6 +377,10 @@ def finish_due_timer(db: Session, session: models.FocusSession, now: datetime) -
         return False
     if session_elapsed(session, now) < int(session.planned_minutes) * 60:
         return False
+    if session.session_kind != "break":
+        from .rewards import freeze_reward_progress
+
+        freeze_reward_progress(db, session, now)
     session.elapsed_seconds = int(session.planned_minutes) * 60
     session.last_resumed_at = None
     session.ended_at = now
@@ -508,6 +531,14 @@ def observe_distraction(db: Session, session: models.FocusSession, now: datetime
     age = max(0, int((now - item.opened_at).total_seconds()))
     if age < max(15, policy.grace_seconds or 90):
         return False
+    from .rewards import interrupt_reward_progress
+
+    interrupt_reward_progress(
+        db,
+        session,
+        interruption_key=f"phone_app:{current.id}",
+        at=now,
+    )
     previous = (
         db.query(models.Intervention)
         .filter(models.Intervention.session_id == session.id, models.Intervention.sent_at.isnot(None))
@@ -619,6 +650,14 @@ def record_camera_phone_distraction(
     )
     db.add(item)
     db.flush()
+    from .rewards import interrupt_reward_progress
+
+    interrupt_reward_progress(
+        db,
+        session,
+        interruption_key=f"camera:{source_event_key}",
+        at=detected_at,
+    )
 
     cooldown = max(30, policy.reminder_cooldown_seconds or 300)
     if previous and previous.sent_at and (now - previous.sent_at).total_seconds() < cooldown:
