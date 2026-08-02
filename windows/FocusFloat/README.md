@@ -82,9 +82,15 @@ The model file is intentionally excluded from Git and from build artifacts.
 - No image, crop, confidence score, embedding, or bounding box is sent.
 - Only event ID, sustained duration, UTC timestamp, and
   `windows_focus_float` source may reach the FocusWith server.
+- During a running work session, a separate heartbeat sends only UTC time,
+  `windows_focus_float`, and observing/stopped state about every 30 seconds. It
+  lets reward progress say “camera verified” without sending image-derived data.
 - The app needs two detection hits to confirm a phone, tolerates four misses,
   requires ten sustained seconds, and applies a 60-second local cooldown.
 - An event is sent only while FocusWith reports a running, non-break session.
+- The selected reward, remaining uninterrupted time, and current evidence mode
+  appear below the timer.
 
 See [the shared camera contract](../../docs/CAMERA_COMPANION.md) and
+[reward evidence rules](../../docs/REWARDS.md), plus
 [third-party notices](THIRD_PARTY_NOTICES.md).

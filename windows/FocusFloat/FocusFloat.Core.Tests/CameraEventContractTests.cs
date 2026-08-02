@@ -26,7 +26,7 @@ public sealed class CameraEventContractTests
     {
         var request = CameraHeartbeatRequest.Create(
             observing: true,
-            DateTimeOffset.Parse("2026-08-02T10:00:00Z"));
+            observedAt: DateTimeOffset.Parse("2026-08-02T10:00:00Z"));
         using var document = JsonDocument.Parse(request.ToJson());
         var names = document.RootElement.EnumerateObject().Select(item => item.Name).Order().ToArray();
 

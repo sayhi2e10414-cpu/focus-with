@@ -57,6 +57,26 @@ def test_v051_interventions_are_migrated_without_data_loss(tmp_path):
             "FROM interventions"
         ).one()
     assert tuple(row) == (7, 11, "phone_app", "phone_app:11")
+    assert {
+        "reward_definitions",
+        "reward_settings",
+        "reward_progress",
+        "reward_grants",
+    }.issubset(inspect(engine).get_table_names())
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql(
+            "SELECT COUNT(*) FROM reward_definitions"
+        ).scalar_one() == 1
+        assert connection.exec_driver_sql(
+            "SELECT COUNT(*) FROM reward_settings"
+        ).scalar_one() == 1
 
     # Startup is intentionally repeatable.
     initialize_database(engine)
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql(
+            "SELECT COUNT(*) FROM reward_definitions"
+        ).scalar_one() == 1
+        assert connection.exec_driver_sql(
+            "SELECT COUNT(*) FROM reward_settings"
+        ).scalar_one() == 1

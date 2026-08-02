@@ -133,6 +133,7 @@ public sealed partial class MainWindow : Window
         if (_session is null)
         {
             TimerText.Text = "00:00";
+            UpdateRewardProgress();
             return;
         }
         var elapsed = _session.ElapsedSeconds;

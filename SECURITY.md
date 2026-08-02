@@ -19,7 +19,7 @@ If a credential may have been exposed:
 - Use the documented OAuth + HTTPS deployment for Remote MCP; never publish an unauthenticated `/mcp` endpoint.
 - Apply operating-system, Docker, reverse-proxy, Python dependency, and FocusWith security updates.
 - Restrict SSH, protect backups, and keep `.env`, `.env.remote`, `.focuswith-admin-password`, `data/`, and Docker volumes out of Git.
-- Review AI tool actions before approval. A valid OAuth connection authorizes both reads and constrained writes through the seven documented tools.
-- Camera companions must keep inference local, show a persistent camera-on indicator, and send only the documented event contract. FocusWith rejects image and image-derived fields at validation time.
+- Review AI tool actions before approval. A valid OAuth connection authorizes both reads and constrained writes through the eleven documented tools.
+- Camera companions must keep inference local, show a persistent camera-on indicator, and send only the documented event and heartbeat contracts. FocusWith rejects image and image-derived fields at validation time.
 
 Only the newest `0.x` release is supported before the first stable `1.0` release.

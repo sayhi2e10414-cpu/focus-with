@@ -35,6 +35,25 @@ A successful response looks like:
 
 `accepted` can be false with `no_running_focus` or `cooldown`. Sending the same event again returns `duplicate` and does not create a second notification.
 
+## Reward evidence heartbeat
+
+When uninterrupted-focus rewards are enabled, an active companion also sends a
+three-field heartbeat about every 30 seconds:
+
+```json
+{
+  "observed_at": "2026-08-02T09:00:00Z",
+  "source": "windows_focus_float",
+  "camera_state": "observing"
+}
+```
+
+`POST /api/vision-events/heartbeat` rejects unknown fields and keeps only the
+latest heartbeat time and source for the active session. It receives no image or
+image-derived result. If the heartbeat expires, reward accounting automatically
+falls back to timer + blocklist or timer-only mode. See
+[REWARDS.md](REWARDS.md).
+
 ## macOS
 
 See [macos/FocusFloat/README.md](../macos/FocusFloat/README.md). The included client uses AVFoundation, Vision, and Core ML. Its model is downloaded from Apple's model assets during the first build and is not committed to this repository.

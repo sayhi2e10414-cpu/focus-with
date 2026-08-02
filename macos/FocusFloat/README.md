@@ -22,6 +22,16 @@ Choose **Start camera** in the floating window to opt in. FocusFloat downloads A
 
 The camera indicator and preview remain visible while monitoring is on. Stop the camera from the same button or quit FocusFloat.
 
+During a running work session, the camera companion sends a privacy-minimal
+heartbeat about every 30 seconds so the floating window and reward system can
+label uninterrupted time as camera verified. The heartbeat contains only time,
+client source, and observing/stopped state. It contains no image-derived data;
+see [the reward evidence rules](../../docs/REWARDS.md).
+
+FocusFloat displays the selected reward and remaining uninterrupted time below
+the timer. Without a current camera heartbeat, the server automatically labels
+progress as timer + blocklist or timer only.
+
 Run the native checks with:
 
 ```bash

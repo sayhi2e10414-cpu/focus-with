@@ -63,7 +63,7 @@ Chat-product availability and write permissions depend on the account and worksp
 
 ## Security boundary
 
-- The built-in Companion receives only the seven Focus tools defined by the server.
+- The built-in Companion receives only the eleven Focus tools defined by the server.
 - MCP clients never receive the provider API key.
 - The phone token cannot access projects, task notes, AI keys, or OAuth tokens.
 - Remote MCP stays disabled unless HTTPS and the OAuth owner-password hash are both configured.

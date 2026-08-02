@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added editable uninterrupted-focus rewards with a default example, selectable
+  targets, persistent earned inventory, explicit redemption, and bilingual Web UI.
+- Added privacy-minimal camera heartbeats and automatic evidence fallback from
+  local camera verification to timer plus blocklist, then pure timer.
+- Added reward progress and heartbeat support to the macOS and Windows floating
+  companions, plus four reward tools for local and Remote MCP clients.
 - Added an experimental Windows WinUI 3 floating companion with local ONNX
   phone detection, Windows Credential Locker storage, privacy-minimal event
   reporting, portable tests, and a `windows-latest` build artifact.

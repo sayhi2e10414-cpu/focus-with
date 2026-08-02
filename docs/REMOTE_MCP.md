@@ -38,7 +38,7 @@ ChatGPT developer-mode apps also connect to a public HTTPS MCP URL and can use O
 
 1. In ChatGPT developer mode, create an app and enter `https://focus.example.com/mcp`.
 2. If ChatGPT's dynamically registered callback is rejected, copy its exact HTTPS callback URI into `FOCUS_OAUTH_ALLOWED_REDIRECT_URIS` alongside the Claude callbacks, then recreate the Focus container.
-3. Complete the FocusWith approval page and inspect the seven advertised tools before enabling them.
+3. Complete the FocusWith approval page and inspect the eleven advertised tools before enabling them.
 
 Never replace the callback allowlist with a wildcard. ChatGPT plan, workspace, and write-tool availability is controlled by OpenAI and may differ between accounts.
 

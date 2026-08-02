@@ -23,6 +23,7 @@ FocusWith 把模糊目标整理成方向、项目、任务和一次次专注。�
 - **默认私密。** 本地安装只监听 `127.0.0.1`；公网 MCP 必须主动开启，并由 OAuth 保护。
 - **让计划变得可执行。** 使用“方向 → 项目 → 任务”组织事情，也可以直接粘贴 AI 聊天生成的 Markdown 计划。
 - **不在计时结束时撒手。** 它会记录每轮专注、合并同一任务的数据、承接昨天未完成的任务，并推荐下一项行动。
+- **已经挣到的奖励不会丢。** 选择或创建奖励，用不间断专注逐步解锁，再从持久保存的“奖励柜”中按需兑换。
 - **AI 是可选伙伴，不是系统主人。** 可以完全不用 AI，也可以接入模型供应商，或让 Claude、Codex 等客户端通过 MCP 操作有限的 Focus 工具。
 - **分心提醒知道你正在做什么。** 手机事件可以和当前专注轮关联，并配置宽限时间、提醒次数、冷却时间及自定义后果。
 
@@ -38,8 +39,9 @@ FocusWith 把模糊目标整理成方向、项目、任务和一次次专注。�
 - 浏览器通知，以及可选的 Telegram 按钮消息。
 - iPhone 快捷指令事件与每日 App 使用时长汇总。
 - Android 应用使用事件同步、常驻计时通知，以及可选的悬浮计时胶囊。
+- 可编辑的不间断专注奖励，带示例、自选目标、持久奖励柜，并自动在摄像头／黑名单／纯计时证据之间降级。
 - 可选的 OpenAI Responses、Anthropic 或 OpenAI-compatible 内置 AI 伙伴，兼容 DeepSeek、GLM 和本地接口。
-- 7 个带安全提示的 MCP 工具，可供 Claude Desktop/Code、Codex 等本地客户端使用。
+- 11 个带安全提示的 MCP 工具，可供 Claude Desktop/Code、Codex 等本地客户端使用，并支持查看奖励进度与兑换。
 - 面向 Claude.ai 和兼容 ChatGPT 工作区的 OAuth Remote MCP，以及干净 VPS 的 HTTPS 自动部署。
 - macOS 原生悬浮计时器带可选的本地镜头陪伴，不要求完整 Xcode。
 - Windows WinUI 3 实验版悬浮计时器带本地 ONNX 手机识别；已纳入 CI 编译，等待 Windows 实机摄像头验证。
@@ -95,6 +97,7 @@ FOCUS_AI_BASE_URL=https://provider.example/v1
 - macOS 悬浮计时器：`./macos/FocusFloat/install.sh`
 - Windows 悬浮计时器预览：[windows/FocusFloat/README.md](windows/FocusFloat/README.md)
 - 镜头陪伴与跨平台事件协议：[docs/CAMERA_COMPANION.md](docs/CAMERA_COMPANION.md)
+- 不间断专注奖励：[docs/REWARDS.md](docs/REWARDS.md)
 - iPhone 快捷指令：[docs/IPHONE_SHORTCUTS.md](docs/IPHONE_SHORTCUTS.md)
 - Android 手机伴侣：[docs/ANDROID.md](docs/ANDROID.md)
 - Android 正式签名版下载：[GitHub Releases](https://github.com/sayhi2e10414-cpu/focus-with/releases)
@@ -127,7 +130,7 @@ docker compose up -d --build
 - 主 API 与手机事件使用不同的随机 Token。
 - `.env`、数据库、日志、生成 App 和运行数据都被 Git 忽略。
 - API／模型 Key 不会嵌入网页 JavaScript、文档、MCP 配置或 macOS App 包。
-- 摄像头画面始终留在伴侣 App 内；服务端只接受事件 ID、持续时间、时间戳和客户端来源，并拒绝图像衍生字段。
+- 摄像头画面始终留在伴侣 App 内；分心事件只含 ID、持续时间、时间戳和来源，奖励心跳只含时间戳、来源和摄像头状态；服务端拒绝图像衍生字段。
 - OAuth 配置不完整时，Remote MCP 无法启动。
 - Remote MCP 使用加盐密码哈希、严格回调白名单、PKCE、Scope 与 Audience 校验、轮换和撤销。
 - Access Token、Refresh Token、授权码、登录 Ticket 与 CSRF 值只以哈希形式保存。
